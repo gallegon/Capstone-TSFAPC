@@ -24,23 +24,27 @@ from PIL import Image
 def main(file_path, resolution):
     data = laspy.read(file_path)
     print(f"Point count: {data.header.point_count}")
-    scale = data.header.scales[0]
-    offset = data.header.offsets[0]
     
+    x_scale = data.header.scales[0]
+    y_scale = data.header.scales[1]
+    z_scale = data.header.scales[2]
+    x_offset = data.header.offsets[0]
+    y_offset = data.header.offsets[1]
+    z_offset = data.header.offsets[2]
     # Keeping *_min, *_max, and *_range unscaled,
     # meaning they are all ints not floats.
-    x_min = int(data.header.x_min / scale)
-    x_max = int(data.header.x_max / scale)
-    y_min = int(data.header.y_min / scale)
-    y_max = int(data.header.y_max / scale)
-    z_min = int(data.header.z_min / scale)
-    z_max = int(data.header.z_max / scale)
+    x_min = int(data.header.x_min / x_scale)
+    x_max = int(data.header.x_max / x_scale)
+    y_min = int(data.header.y_min / y_scale)
+    y_max = int(data.header.y_max / y_scale)
+    z_min = int(data.header.z_min / z_scale)
+    z_max = int(data.header.z_max / z_scale)
     x_range = x_max - x_min
     y_range = y_max - y_min
     z_range = z_max - z_min
-    print(f"X range: {x_range * scale} meters")
-    print(f"Y range: {y_range * scale} meters")
-    print(f"Z range: {z_range * scale} meters")
+    print(f"X range: {x_range * x_scale} meters")
+    print(f"Y range: {y_range * y_scale} meters")
+    print(f"Z range: {z_range * z_scale} meters")
     
     # Using ceil to capture the very edges of the data as well.
     # Integer rounding or flooring would leave off some information.
@@ -48,19 +52,20 @@ def main(file_path, resolution):
     # [x_range * scale] = meters
     # [resolution] = meters / pixel
     # meters / (meters / pixel) = meters * (pixels / meter) = pixels
-    img_width = ceil(x_range * scale / resolution)
-    img_height = ceil(y_range * scale / resolution)
+    img_width = ceil(x_range * x_scale / resolution)
+    img_height = ceil(y_range * y_scale / resolution)
     print(f"Resolution: {resolution} meters per pixel")
     print(f"Image dimensions: {img_width}x{img_height} pixels^2")
     
     # Create a grid based off the resolution
     # and find the highest point in each cell.
     grid = {}
-    cell_size = resolution / scale
+    x_cell_size = resolution / x_scale
+    y_cell_size = resolution / y_scale
     for point in data:
         x, y, z = point.X, point.Y, point.Z
-        x_grid = int((x - x_min) // cell_size)
-        y_grid = int((y - y_min) // cell_size)
+        x_grid = int((x - x_min) // x_cell_size)
+        y_grid = int((y - y_min) // y_cell_size)
         id_grid = (x_grid, y_grid)
         if not id_grid in grid or grid[id_grid] < z:
             grid[id_grid] = z
