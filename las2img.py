@@ -65,22 +65,32 @@ def main(file_path, resolution):
     points_xyz = np.array([data.X, data.Y, data.Z]).transpose()
     x_cell_size = resolution / x_scale
     y_cell_size = resolution / y_scale
-    grid_xyz = np.zeros(shape=(width_grid, height_grid))
-    for y_grid in range(height_grid):
-        mask_y_grid = (points_xyz[:, 1] - y_min) // y_cell_size == y_grid
-        for x_grid in range(width_grid):
-            mask_x_grid = (points_xyz[:, 0] - x_min) // x_cell_size == x_grid
-            selected = points_xyz[mask_x_grid & mask_y_grid, 2]
-            if selected.size == 0:
-                highest = z_min
-            else:
-                highest = np.amax(selected)
-            grid_xyz[x_grid, y_grid] = highest
+    # [x_grid][y_grid][x, y, z]
+    # Contains the highest point in each cell
+    grid = np.full(shape=(width_grid, height_grid), fill_value=z_min)
     
-    image_grayscale = (grid_xyz - z_min) / (z_max - z_min)
+    for x_grid in range(width_grid):
+        x_mask = (points_xyz[:, 0] - x_min) // x_cell_size == x_grid
+        for y_grid in range(height_grid):
+            y_mask = (points_xyz[:, 1] - y_min) // y_cell_size == y_grid
+            mask_in_cell = x_mask & y_mask
+            points_in_cell = points_xyz[mask_in_cell, 2]
+            if points_in_cell.size > 0:
+                highest = np.amax(points_in_cell)
+                if grid[x_grid, y_grid] < highest:
+                    grid[x_grid, y_grid] = highest
+    
+    image_grayscale = (grid - z_min) / (z_max - z_min)
     image_grayscale = (image_grayscale * 255).astype(np.uint8)
     img = Image.fromarray(image_grayscale, "L")
-    img.save("raster.png")
+    # Format the name and save the image.
+    save_path = "./rasters/"
+    os.makedirs(save_path, exist_ok=True)
+    file_name = os.path.split(file_path)[1]
+    save_name = f"{file_name}_{resolution}-{width_grid}x{height_grid}.png"
+    full_path = os.path.join(save_path, save_name)
+    img.save(full_path)
+    print(f"Saved image to \"{full_path}\"")
 
 if __name__ == "__main__":
     # Doing some basic CLI stuff.
