@@ -18,12 +18,14 @@ from timeit import default_timer as timer
 
 # laspy for reading in LAS files.
 import laspy
+import numpy as np
 # pillow (PIL) for creating and saving an image.
 from PIL import Image
 
 def main(file_path, resolution):
     data = laspy.read(file_path)
-    print(f"Point count: {data.header.point_count}")
+    point_count = data.header.point_count
+    print(f"Point count: {point_count}")
     
     x_scale = data.header.scales[0]
     y_scale = data.header.scales[1]
@@ -52,44 +54,33 @@ def main(file_path, resolution):
     # [x_range * scale] = meters
     # [resolution] = meters / pixel
     # meters / (meters / pixel) = meters * (pixels / meter) = pixels
-    img_width = ceil(x_range * x_scale / resolution)
-    img_height = ceil(y_range * y_scale / resolution)
+    width_grid = ceil(x_range * x_scale / resolution)
+    height_grid = ceil(y_range * y_scale / resolution)
     print(f"Resolution: {resolution} meters per pixel")
-    print(f"Image dimensions: {img_width}x{img_height} pixels^2")
+    print(f"Grid dimensions: {width_grid}x{height_grid} cells")
     
-    # Create a grid based off the resolution
-    # and find the highest point in each cell.
-    grid = {}
+    # Creating a numpy 3 by point_count 2darray
+    # This will store the x, y, and z components
+    # Structure after the transpose is [point_index][x, y, z]
+    points_xyz = np.array([data.X, data.Y, data.Z]).transpose()
     x_cell_size = resolution / x_scale
     y_cell_size = resolution / y_scale
-    for point in data:
-        x, y, z = point.X, point.Y, point.Z
-        x_grid = int((x - x_min) // x_cell_size)
-        y_grid = int((y - y_min) // y_cell_size)
-        id_grid = (x_grid, y_grid)
-        if not id_grid in grid or grid[id_grid] < z:
-            grid[id_grid] = z
+    grid_xyz = np.zeros(shape=(width_grid, height_grid))
+    for y_grid in range(height_grid):
+        mask_y_grid = (points_xyz[:, 1] - y_min) // y_cell_size == y_grid
+        for x_grid in range(width_grid):
+            mask_x_grid = (points_xyz[:, 0] - x_min) // x_cell_size == x_grid
+            selected = points_xyz[mask_x_grid & mask_y_grid, 2]
+            if selected.size == 0:
+                highest = z_min
+            else:
+                highest = np.amax(selected)
+            grid_xyz[x_grid, y_grid] = highest
     
-    # Create a grayscale image and default it to black.
-    img = Image.new(mode="L", size=(img_width, img_height))
-    for i in range(img_width):
-        for j in range(img_height):
-            img.putpixel((i,j), 0)
-    # For every collected point, put it on the picture.
-    for xy, z in grid.items():
-        # Normalize z and convert it to a range of [0, 255]
-        # (0 is black, 255 is white).
-        val = int((z - z_min) / (z_max - z_min) * 255)
-        img.putpixel(xy, val)
-    
-    # Format the name and save the image.
-    save_path = "./rasters/"
-    os.makedirs(save_path, exist_ok=True)
-    file_name = os.path.split(file_path)[1]
-    save_name = f"{file_name}_{resolution}-{img_width}x{img_height}.bmp"
-    full_path = os.path.join(save_path, save_name)
-    img.save(full_path, "BMP")
-    print(f"Saved image to \"{full_path}\"")
+    image_grayscale = (grid_xyz - z_min) / (z_max - z_min)
+    image_grayscale = (image_grayscale * 255).astype(np.uint8)
+    img = Image.fromarray(image_grayscale, "L")
+    img.save("raster.png")
 
 if __name__ == "__main__":
     # Doing some basic CLI stuff.
