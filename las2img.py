@@ -13,7 +13,6 @@
 
 import os.path
 import sys
-from math import ceil
 from timeit import default_timer as timer
 
 # laspy for reading in LAS files.
@@ -69,14 +68,16 @@ def main(file_path, resolution):
             // np.array([[cell_size_x], [cell_size_y]])
         ).astype("int")
 
-    def where_z_GT_grid(index, x, y):
+    def replace_grid_where_z_gt(index, x, y):
         z = points_xyz[2][index]
         if z > grid_point_max_z[x, y]:
             grid_point_max_z[x, y] = z
 
     points_indices = np.arange(point_count)
-    f_in_0 = np.vectorize(where_z_GT_grid)
-    f_in_0(points_indices, points_xy_cell_index[0], points_xy_cell_index[1])
+    compute_grid_point_max_z = np.vectorize(replace_grid_where_z_gt)
+    compute_grid_point_max_z(points_indices, points_xy_cell_index[0], points_xy_cell_index[1])
+    # At this point, grid_point_max_z contains the z value of the highest point in each cell.
+
     # Format the data into an image appropriate format for PIL.
     image_grayscale = ((grid_point_max_z + 1) / max_xyz[2] * 255).astype("uint8").transpose()
     img = Image.fromarray(image_grayscale, "L")
