@@ -68,23 +68,15 @@ def main(file_path, resolution):
             (points_xyz[:2, :] - min_xyz[:2].reshape((2, 1)))
             // np.array([[cell_size_x], [cell_size_y]])
         ).astype("int")
-    
-    # points_in_cell = {(cell_x, cell_y): [indices of points in cell...]}
-    points_in_cell = {}
-    points_indices = np.arange(point_count)
-    for cell_x in range(grid_width):
-        mask_in_cell_x = points_xy_cell_index[0] == cell_x
-        for cell_y in range(grid_height):
-            cell_xy = (cell_x, cell_y)
-            mask_in_cell_y = points_xy_cell_index[1] == cell_y
-            mask_in_cell_xy = mask_in_cell_x & mask_in_cell_y
-            points_in_this_cell = points_indices[mask_in_cell_xy]
-            points_in_cell[cell_xy] = points_in_this_cell
-            if len(points_in_this_cell) == 0:
-                continue
-            highest_z = points_xyz[2, points_in_this_cell].max()
-            grid_point_max_z[cell_x, cell_y] = highest_z
 
+    def where_z_GT_grid(index, x, y):
+        z = points_xyz[2][index]
+        if z > grid_point_max_z[x, y]:
+            grid_point_max_z[x, y] = z
+
+    points_indices = np.arange(point_count)
+    f_in_0 = np.vectorize(where_z_GT_grid)
+    f_in_0(points_indices, points_xy_cell_index[0], points_xy_cell_index[1])
     # Format the data into an image appropriate format for PIL.
     image_grayscale = ((grid_point_max_z + 1) / max_xyz[2] * 255).astype("uint8").transpose()
     img = Image.fromarray(image_grayscale, "L")
