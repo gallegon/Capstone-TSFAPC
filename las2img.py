@@ -54,7 +54,7 @@ def main(file_path, resolution):
     grid_point_max_z = np.full(shape=(grid_width, grid_height), fill_value=-1)
     cell_size_x, cell_size_y = resolution / scale_xyz[:2]
     # I need to find the point with the greatest z value within a cell
-    # I will do this by turning the point xy coordinates into cell x coordinates
+    # I will do this by turning the point xy coordinates into cell xy coordinates
     # For each point:
     #       point_cell_x = (point_x - min_x) // cell_size_x
     #       point_cell_y = (point_y - min_y) // cell_size_y
