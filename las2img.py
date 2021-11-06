@@ -7,9 +7,9 @@
 #   `resolution` is in meters per pixel.
 #
 # Description:
-#   Transforms a LAS file into an aerial-view grayscale image.
-#   The lowest points are black, the highest points are white.
-#   Points for which there is no collected data are colored black.
+#   Transforms a LAS file into an aerial-view discretized grayscale image.
+#   The lowest points are white, the highest points are black.
+#   Points for which there is no collected data are colored white.
 
 import os.path
 import sys
@@ -22,7 +22,7 @@ import numpy as np
 from PIL import Image
 
 
-def main(file_path, resolution, discretization):
+def las2img(file_path, resolution, discretization):
     data = laspy.read(file_path)
     header = data.header
     point_count = header.point_count
@@ -49,7 +49,7 @@ def main(file_path, resolution, discretization):
     print(f"Z range: {range_xyz[2]:8.2f} scaled units")
     print(f"Resolution: {resolution:.2f} scaled unit^2 per pixel")
     print(f"Discretization: {discretization} levels")
-    print(f"Image dimensions: {grid_width}x{grid_height} pixels")
+    print(f"Grid dimensions: {grid_width}x{grid_height}")
 
     # I want the highest point within each cell
     # I'm going to store this as indices.
@@ -81,44 +81,51 @@ def main(file_path, resolution, discretization):
     compute_grid_point_max_z = np.vectorize(replace_grid_where_z_gt)
     compute_grid_point_max_z(points_indices, points_xy_cell_index[0], points_xy_cell_index[1])
     # At this point, grid_point_max_z contains the z value of the highest point in each cell.
-
-    # grid_point_discrete_z = grid_point_max_z
-
-    # Format the data into an image appropriate format for PIL.
-    # image_grayscale = (255 - ((grid_point_max_z + 1) / (max_xyz[2] + 1) * 255)).astype("uint8").transpose()
-
+    # Create the height discretized version of the grid.
     grid_discretized = (grid_point_max_z / max_xyz[2] * discretization).round().astype("int")
+
+    return grid_discretized
+
+
+def from_cli():
+    # Parse the command line arguments
+    args = sys.argv[1:]
+    if len(args) == 2:
+        discretization = 256
+    elif len(args) == 3:
+        discretization = int(args[2])
+        if not 1 <= discretization <= 256:
+            print("Discretization level must be in the range [1, 256].")
+            return None
+    else:
+        print("Invalid number of arguments.")
+        print("Usage: las2img.py file_path resolution [discretization]")
+        return None
+    file_path = args[0]
+    if not os.path.exists(file_path):
+        print("Specified input file does not exist.")
+        return None
+    resolution = float(args[1])
+
+    # Run and report the execution time.
+    start = timer()
+    grid_discretized = las2img(file_path, resolution, discretization)
+    elapsed = timer() - start
+    print(f"Finished in {elapsed} seconds.")
+
+    print("Saving image...");
+    # Format the data into an image appropriate format for PIL.
     image_grayscale = ((1 - grid_discretized / discretization) * 255).astype("uint8").transpose()
     img = Image.fromarray(image_grayscale, "L")
     # Format the name and save the image.
     save_path = "./rasters/"
     os.makedirs(save_path, exist_ok=True)
     file_name = os.path.split(file_path)[1]
-    save_name = f"{file_name}_{resolution}-{discretization}-{grid_width}x{grid_height}.png"
+    save_name = f"{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
     full_path = os.path.join(save_path, save_name)
     img.save(full_path)
     print(f"Saved image to \"{full_path}\"")
 
 
 if __name__ == "__main__":
-    # Doing some basic CLI stuff.
-    argv = sys.argv
-    if len(argv) not in (3, 4):
-        print("Invalid number of arguments.")
-        print("Usage: las2img file_path resolution [discretization]")
-        exit(1)
-    file_path = argv[1]
-    if not os.path.exists(file_path):
-        print("Invalid file_path: does not exist.")
-        exit(2)
-    # Resolution in meters per pixel.
-    # A value of 1 means each pixel represents
-    # the highest point within a meter^2 cell.
-    resolution = float(argv[2])
-    discretization = 255 if len(argv) < 4 else int(argv[3])
-    assert 1 <= discretization < 256
-    # Report the execution time.
-    start = timer()
-    main(file_path, resolution, discretization)
-    elapsed = timer() - start
-    print(f"Finished in {elapsed} seconds.")
+    from_cli()
