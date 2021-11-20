@@ -121,7 +121,7 @@ def from_cli():
     save_path = "./rasters/"
     os.makedirs(save_path, exist_ok=True)
     file_name = os.path.split(file_path)[1]
-    save_name = f"{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
+    save_name = f"{file_name}_{resolution}-{discretization}-{img.width}x{img.height_level}.png"
     full_path = os.path.join(save_path, save_name)
     img.save(full_path)
     print(f"Saved image to \"{full_path}\"")
