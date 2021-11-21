@@ -36,9 +36,9 @@ def find_patches_of_height(height_level):
     
     objects = grid == height_level
     neighbor_mask = [
-        [0, 1, 0],
         [1, 1, 1],
-        [0, 1, 0]
+        [1, 1, 1],
+        [1, 1, 1]
     ]
     labels, num_labels = label(objects, neighbor_mask)
     # print("== Unique Patches")
