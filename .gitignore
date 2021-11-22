@@ -1,5 +1,7 @@
 __pycache__/
 .idea/
 rasters/
+rasters/*
 labeled_raster/
+labeled_raster/*
 *.old
