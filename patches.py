@@ -86,7 +86,7 @@ def create_and_save_colored_labeled_grid(labeled_grid, all_patches, input_file_p
     from PIL import Image
     import os.path
     
-    print("Saving image...");
+    print("Saving image...")
     # Format the data into an image appropriate format for PIL.
     # Dear god this part needs to be written literally any other way.
     import random
