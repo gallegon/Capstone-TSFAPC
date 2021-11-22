@@ -24,23 +24,51 @@ class Patch:
     def __init__(self, height_level):
         self.height_level = height_level
         self.cells = []
+        self.neighboring_patches = set()
         self.id = Patch.ID
         Patch.ID += 1
     
     def __str__(self):
         lines = [
-            f"Patches:",
+            f"Patch#{self.id}:",
             f"  height = {self.height_level}",
             f"  cell_count = {len(self.cells)}",
-            f"  cells = [",
+            # f"  cells = [",
+            # *",\n".join([f"    ({x}, {y})" for x, y in self.cells]).splitlines(),
+            # "  ]",
+            f"  neighbors = [",
+            *",\n".join([f"    {neighbor}" for neighbor in self.neighboring_patches]).splitlines(),
+            "  ]"
         ]
-        lines.extend(",\n".join([f"    ({x}, {y})" for x, y in self.cells]).splitlines())
-        lines.append("  ]")
         return "\n".join(lines)
     
     def __repr__(self):
         return f"Patch<{self.height_level}, {len(self.cells)}, #{self.id}>"
 
+
+def compute_patch_neighbors(grid, labeled_grid, all_patches):
+    print("== Computing neighbors")
+    offsets = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    grid_width, grid_height = grid.shape
+    for patch in all_patches:
+        height_level = patch.height_level
+        for x, y in patch.cells:
+            for ox, oy in offsets:
+                xx = x + ox
+                yy = y + oy
+                if xx < 0 or xx >= grid_width:
+                    continue
+                if yy < 0 or yy >= grid_height:
+                    continue
+                # print(f"{xx}, {yy}")
+                other_label = labeled_grid[xx, yy]
+                # print(other_label)
+                if patch.id == other_label:
+                    continue
+                # other_height = grid[xy + offset]
+                # print(f"Neighbor of cell({x, y}, {patch.id}) is cell({xx, yy}, {other_label})")
+                patch.neighboring_patches.add(other_label)
+    
 
 def compute_patches(grid, discretization, min_height, neighbor_mask=None):
     all_patches = []
@@ -153,9 +181,10 @@ def from_cli():
     print(f"Created discretized grid in {elapsed} seconds.")
     start = timer()
     all_patches = compute_patches(grid, discretization, min_height_cutoff, NEIGHBOR_MASK_FOUR_WAY)
-    elapsed = timer() - start
-    print(f"Computed patches in {elapsed} seconds.")
     labeled_grid = create_labeled_grid(grid, all_patches)
+    compute_patch_neighbors(grid, labeled_grid, all_patches)
+    elapsed = timer() - start
+    print(f"Computed patches and neighbors in {elapsed} seconds.")
     create_and_save_colored_labeled_grid(labeled_grid, all_patches, file_path, resolution, discretization)
 
 
