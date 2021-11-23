@@ -60,7 +60,7 @@ def compute_patch_neighbors(grid, labeled_grid, all_patches):
                 if yy < 0 or yy >= grid_height:
                     continue
                 other_label = labeled_grid[xx, yy]
-                if patch.id == other_label:
+                if patch.id == other_label or other_label == 0:
                     continue
                 patch.neighboring_patches.add(other_label)
     
