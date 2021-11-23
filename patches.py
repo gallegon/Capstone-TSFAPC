@@ -51,7 +51,6 @@ def compute_patch_neighbors(grid, labeled_grid, all_patches):
     offsets = [(1, 0), (-1, 0), (0, 1), (0, -1)]
     grid_width, grid_height = grid.shape
     for patch in all_patches:
-        height_level = patch.height_level
         for x, y in patch.cells:
             for ox, oy in offsets:
                 xx = x + ox
@@ -60,13 +59,9 @@ def compute_patch_neighbors(grid, labeled_grid, all_patches):
                     continue
                 if yy < 0 or yy >= grid_height:
                     continue
-                # print(f"{xx}, {yy}")
                 other_label = labeled_grid[xx, yy]
-                # print(other_label)
                 if patch.id == other_label:
                     continue
-                # other_height = grid[xy + offset]
-                # print(f"Neighbor of cell({x, y}, {patch.id}) is cell({xx, yy}, {other_label})")
                 patch.neighboring_patches.add(other_label)
     
 
@@ -102,7 +97,7 @@ def find_patches_of_height(grid, height_level, neighbor_mask=None):
 
 
 def create_labeled_grid(grid, all_patches):
-    labeled_grid = np.zeros(grid.shape)
+    labeled_grid = np.zeros(grid.shape, dtype="int")
     for patch in all_patches:
         for x, y in patch.cells:
             labeled_grid[x, y] = patch.id
