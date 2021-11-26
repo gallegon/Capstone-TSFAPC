@@ -47,7 +47,7 @@ class Patch:
 
 
 def compute_patch_neighbors(grid, labeled_grid, all_patches):
-    print("== Computing neighbors")
+    # print("== Computing neighbors")
     offsets = [(1, 0), (-1, 0), (0, 1), (0, -1)]
     grid_width, grid_height = grid.shape
     for patch in all_patches:

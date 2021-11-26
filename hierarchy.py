@@ -55,7 +55,7 @@ def compute_hierarchies(all_patches):
     # Basic pipeline of what's happening:
     # - Transform every Patch into a HierarchyNode.
     # - Find the roots (nodes with no parents).
-    # - Compute and return a Hierarchy for each node.
+    # - Compute and return a Hierarchy for each root node.
     
     # Compute nodes (and roots)
     all_patches_by_id = {patch.id: patch for patch in all_patches}
@@ -106,8 +106,8 @@ def create_grid_of_hierarchy(labeled_grid, hierarchy):
 
 if __name__ == "__main__":
     file_path = "./data/hard_nno.las"
-    resolution = 0.5
-    discretization = 16
+    resolution = 1
+    discretization = 5
     min_height = 1
     
     grid = las2img.las2img(file_path, resolution, discretization)
@@ -117,12 +117,11 @@ if __name__ == "__main__":
     
     hierarchies = compute_hierarchies(all_patches)
     print(f"Created {len(hierarchies)} hierarchies")
-    exit()
     hierarchy_grids = {h.root_id: create_grid_of_hierarchy(labeled_grid, h) for h in hierarchies}
     print(f"Saving {len(hierarchy_grids)} image(s)...")
+    from PIL import Image
+    import os.path
     for root_id, grid_of_hierarchy in hierarchy_grids.items():
-        from PIL import Image
-        import os.path
         # Format the data into an image appropriate format for PIL.
         image_grayscale = grid_of_hierarchy.astype("uint8").transpose()
         img = Image.fromarray(image_grayscale, "L")
@@ -134,5 +133,3 @@ if __name__ == "__main__":
         full_path = os.path.join(save_path, save_name)
         img.save(full_path)
         print(f"Saved image to \"{full_path}\"")
-    
-    

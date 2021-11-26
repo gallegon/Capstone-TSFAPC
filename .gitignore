@@ -4,4 +4,6 @@ rasters/
 rasters/*
 labeled_rasters/
 labeled_rasters/*
+hierarchy_rasters/
+hierarchy_rasters/*
 *.old
