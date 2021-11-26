@@ -7,9 +7,9 @@ import hierarchy
 
 if __name__ == "__main__":
     file_path = "./data/easy_nno.las"
-    resolution = 0.5
-    discretization = 256
-    min_height = 1
+    resolution = 1
+    discretization = 16
+    min_height = 5
     
     print(f"Input file: \"{file_path}\"")
     print(f"== Creating grid")
