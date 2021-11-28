@@ -5,5 +5,5 @@ Created by Mark G, Nicholai G, and Samuel F.
 
 To run the algorithm up to the most completed step:
 ```
-python run_algorithm.py
+python ts_cli.py
 ```
