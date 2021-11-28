@@ -11,7 +11,7 @@ if __name__ == "__main__":
     discretization = 32
     min_height = 16
     
-    print(f"Input file: \"{file_path}\"")
+    print(f"== Input data")
     data = laspy.read(file_path)
     header = data.header
     point_count = header.point_count
@@ -24,17 +24,22 @@ if __name__ == "__main__":
     max_xyz = (np.array([header.x_max, header.y_max, header.z_max]) / scale_xyz).astype("int")
     bounds_xyz = (min_xyz, max_xyz)
     range_xyz = (max_xyz - min_xyz) * scale_xyz
-
-    # I have the *unscaled* xyz position of each point
-    # points_xyz = [ x: [point_x...]
-    #              , y: [point_y...]
-    #              , z: [point_z...]
-    #              ]
+    print(f"File: {file_path}")
+    print(f"Point count: {point_count}")
+    print(f"Range X: {range_xyz[0]:.2f} scaled units")
+    print(f"Range Y: {range_xyz[1]:.2f} scaled units")
+    print(f"Range Z: {range_xyz[2]:.2f} scaled units")
+    
+    print()
+    print(f"== Creating grid")
     points_xyz = np.array([data.X, data.Y, data.Z])
     grid_size = np.ceil(range_xyz[:2] / resolution).astype("int")
-    cell_size = resolution / scale_xyz[:2]
-    
-    print(f"== Creating grid")
+    cell_size = np.ceil(resolution / scale_xyz[:2]).astype("int")
+    print(f"Resolution: {resolution:.3f} scaled units^2 per pixel")
+    print(f"Height levels: {discretization} levels")
+    print(f"Height cutoff: {min_height}")
+    print(f"Grid dimensions: {grid_size[0]}x{grid_size[1]} cells^2")
+    print(f"Cell dimensions: {cell_size[0] * scale_xyz[0]}x{cell_size[1] * scale_xyz[1]} scaled units^2 per cell")
     grid = las2img.las2img(points_xyz, bounds_xyz, grid_size, cell_size, discretization)
     
     print()
@@ -50,7 +55,8 @@ if __name__ == "__main__":
     print(f"== Creating hierarchies")
     hierarchies = hierarchy.compute_hierarchies(all_patches)
     print(f"Created {len(hierarchies)} unique hierarchies (root nodes)")
-    print("----")
+    
+    print()
     print("Save labeled hierarchies as raster? [y/n]")
     user_input = input(">>> ")
     should_save = user_input == 'y' or user_input == 'Y'
