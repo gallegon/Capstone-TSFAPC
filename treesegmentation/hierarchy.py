@@ -1,8 +1,8 @@
 # hierarchy.py
 import numpy as np
 
-import las2img
-import patches
+from .las2img import *
+import treesegmentation.patch as patch
 
 
 class HierarchyNode:
@@ -94,42 +94,11 @@ def compute_hierarchies(all_patches):
     return hierarchies
 
 
-def create_grid_of_hierarchy(labeled_grid, hierarchy):
+def hierarchy_as_raster(labeled_grid, hierarchy):
     hierarchy_grid = np.full(labeled_grid.shape, 255)
-    for hnode in hierarchy.nodes_by_id.values():
-        for x, y in hnode.patch.cells:
+    for node in hierarchy.nodes_by_id.values():
+        for x, y in node.patch.cells:
             patch_id = labeled_grid[x, y]
             patch_height = hierarchy.nodes_by_id[patch_id].patch.height_level
             hierarchy_grid[x, y] = 255 * (1 - patch_height / hierarchy.height)
     return hierarchy_grid
-
-
-if __name__ == "__main__":
-    file_path = "./data/hard_nno.las"
-    resolution = 1
-    discretization = 5
-    min_height = 1
-    
-    grid = las2img.las2img(file_path, resolution, discretization)
-    all_patches = patches.compute_patches(grid, discretization, min_height)
-    labeled_grid = patches.create_labeled_grid(grid, all_patches)
-    patches.compute_patch_neighbors(grid, labeled_grid, all_patches)
-    
-    hierarchies = compute_hierarchies(all_patches)
-    print(f"Created {len(hierarchies)} hierarchies")
-    hierarchy_grids = {h.root_id: create_grid_of_hierarchy(labeled_grid, h) for h in hierarchies}
-    print(f"Saving {len(hierarchy_grids)} image(s)...")
-    from PIL import Image
-    import os.path
-    for root_id, grid_of_hierarchy in hierarchy_grids.items():
-        # Format the data into an image appropriate format for PIL.
-        image_grayscale = grid_of_hierarchy.astype("uint8").transpose()
-        img = Image.fromarray(image_grayscale, "L")
-        # Format the name and save the image.
-        save_path = "./hierarchy_rasters/"
-        os.makedirs(save_path, exist_ok=True)
-        file_name = os.path.split(file_path)[1]
-        save_name = f"{file_name}_h#{root_id}-{resolution}-{discretization}-{img.width}x{img.height}.png"
-        full_path = os.path.join(save_path, save_name)
-        img.save(full_path)
-        print(f"Saved image to \"{full_path}\"")

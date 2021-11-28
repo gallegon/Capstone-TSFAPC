@@ -1,5 +1,9 @@
 # Capstone-TSFAPC
 CS461 OSU Capstone Tree Segmentation from Aerial Point Clouds
 
-to run:
-> python test.py [cell_size in meters] [x value] [y value]
+Created by Mark G, Nicholai G, and Samuel F.
+
+To run the algorithm up to the most completed step:
+```
+python run_algorithm.py
+```

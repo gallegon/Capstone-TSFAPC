@@ -1,12 +1,9 @@
 # run_algorithm.py
 
-import las2img
-import patches
-import hierarchy
-
+from treesegmentation import patch, hierarchy, las2img
 
 if __name__ == "__main__":
-    file_path = "./data/easy_nno.las"
+    file_path = "sample_data/easy_nno.las"
     resolution = 1
     discretization = 16
     min_height = 5
@@ -17,12 +14,12 @@ if __name__ == "__main__":
     
     print()
     print(f"== Creating patches")
-    all_patches = patches.compute_patches(grid, discretization, min_height)
+    all_patches = patch.compute_patches(grid, discretization, min_height, patch.NEIGHBOR_MASK_FOUR_WAY)
     print(f"Created {len(all_patches)} unique patches")
     print(f"-- Labeling grid")
-    labeled_grid = patches.create_labeled_grid(grid, all_patches)
+    labeled_grid = patch.create_labeled_grid(grid, all_patches)
     print(f"-- Computing cell neighbors")
-    patches.compute_patch_neighbors(grid, labeled_grid, all_patches)
+    patch.compute_patch_neighbors(grid, labeled_grid, all_patches)
     
     print()
     print(f"== Creating hierarchies")
@@ -35,12 +32,12 @@ if __name__ == "__main__":
     if should_save:
         save_path = "./hierarchy_rasters/"
         print(f"Saving {len(hierarchies)} image(s) to \"{save_path}\"")
-        hierarchy_grids = {h.root_id: hierarchy.create_grid_of_hierarchy(labeled_grid, h) for h in hierarchies}
+        hierarchy_grids = {h.root_id: hierarchy.hierarchy_as_raster(labeled_grid, h) for h in hierarchies}
         for root_id, grid_of_hierarchy in hierarchy_grids.items():
             from PIL import Image
             import os.path
         
-            # Format the data into an image appropriate format for PIL.
+            # Format the sample_data into an image appropriate format for PIL.
             image_grayscale = grid_of_hierarchy.astype("uint8").transpose()
             img = Image.fromarray(image_grayscale, "L")
             # Format the name and save the image.
