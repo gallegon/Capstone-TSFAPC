@@ -1,8 +1,6 @@
 # hierarchy.py
-import numpy as np
 
-from .las2img import *
-import treesegmentation.patch as patch
+import numpy as np
 
 
 class HierarchyNode:
