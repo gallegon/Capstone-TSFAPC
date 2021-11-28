@@ -9,48 +9,22 @@
 # Description:
 #   Transforms a LAS file into an aerial-view discretized grayscale image.
 #   The lowest points are white, the highest points are black.
-#   Points for which there is no collected sample_data are colored white.
+#   Points for which there is no collected data are colored white.
 
-# laspy for reading in LAS files.
-import laspy
+
 import numpy as np
 
 
-def las2img(file_path, resolution, discretization):
-    data = laspy.read(file_path)
-    header = data.header
-    point_count = header.point_count
-    scale_xyz = header.scales
-    offset_xyz = header.offsets
-    # Keeping the mins and maxs unscaled, making them ints and not floats.
-    # Doing this because laspy sample_data.X, .Y, and .Z are all unscaled ints.
-    # However *_min and *_max are all scaled.
-    min_xyz = (np.array([header.x_min, header.y_min, header.z_min]) / scale_xyz).astype("int")
-    max_xyz = (np.array([header.x_max, header.y_max, header.z_max]) / scale_xyz).astype("int")
-    range_xyz = (max_xyz - min_xyz) * scale_xyz
-
-    # I have the *unscaled* xyz position of each point
-    # points_xyz = [ x: [point_x...]
-    #              , y: [point_y...]
-    #              , z: [point_z...]
-    #              ]
-    points_xyz = np.array([data.X, data.Y, data.Z])
-
-    grid_width, grid_height = np.ceil(range_xyz[:2] / resolution).astype("int")
-    # print(f"Point count: {point_count}")
-    # print(f"X range: {range_xyz[0]:8.2f} scaled units")
-    # print(f"Y range: {range_xyz[1]:8.2f} scaled units")
-    # print(f"Z range: {range_xyz[2]:8.2f} scaled units")
-    # print(f"Resolution: {resolution:.2f} scaled unit^2 per pixel")
-    # print(f"Discretization: {discretization} levels")
-    # print(f"Grid dimensions: {grid_width}x{grid_height}")
-
+def las2img(points_xyz, bounds_xyz, grid_size, cell_size, discretization):
+    point_count = points_xyz.shape[1]
+    min_xyz, max_xyz = bounds_xyz
+    grid_width, grid_height = grid_size
+    cell_size_x, cell_size_y = cell_size
     # I want the highest point within each cell
     # I'm going to store this as indices.
     # grid_point_max_z_index will eventually contain the index
     # for the point with the highest z value in each cell.
     grid_point_max_z = np.full(shape=(grid_width, grid_height), fill_value=0)
-    cell_size_x, cell_size_y = resolution / scale_xyz[:2]
     # I need to find the point with the greatest z value within a cell
     # I will do this by turning the point xy coordinates into cell xy coordinates
     # For each point:
@@ -77,5 +51,4 @@ def las2img(file_path, resolution, discretization):
     # At this point, grid_point_max_z contains the z value of the highest point in each cell.
     # Create the height discretized version of the grid.
     grid_discretized = (grid_point_max_z / max_xyz[2] * discretization).round().astype("int")
-
     return grid_discretized

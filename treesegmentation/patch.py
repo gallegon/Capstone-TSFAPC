@@ -86,8 +86,8 @@ def find_patches_of_height(grid, height_level, neighbor_mask=None):
 def create_labeled_grid(grid, all_patches):
     labeled_grid = np.zeros(grid.shape, dtype="int")
     for patch in all_patches:
-        for x, y in patch.cells:
-            labeled_grid[x, y] = patch.id
+        x, y = patch.cells.T
+        labeled_grid[x, y] = patch.id
     
     return labeled_grid
 
