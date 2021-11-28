@@ -6,4 +6,6 @@ labeled_rasters/
 labeled_rasters/*
 hierarchy_rasters/
 hierarchy_rasters/*
+labeled_hierarchies/
+labeled_hierarchies/*
 *.old
