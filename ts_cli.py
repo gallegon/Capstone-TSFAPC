@@ -3,14 +3,14 @@
 import laspy
 import numpy as np
 
-from treesegmentation import patch, hierarchy, las2img
+from treesegmentation import patch, hierarchy, las2img, hdag
 
 if __name__ == "__main__":
     file_path = "sample_data/hard_nno.las"
     resolution = 1
-    discretization = 32
-    min_height = 16
-    
+    discretization = 16
+    min_height = 8
+
     print(f"== Input data")
     data = laspy.read(file_path)
     header = data.header
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     print(f"Range X: {range_xyz[0]:.2f} scaled units")
     print(f"Range Y: {range_xyz[1]:.2f} scaled units")
     print(f"Range Z: {range_xyz[2]:.2f} scaled units")
-    
+
     print()
     print(f"== Creating grid")
     points_xyz = np.array([data.X, data.Y, data.Z])
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     print(f"Grid dimensions: {grid_size[0]}x{grid_size[1]} cells^2")
     print(f"Cell dimensions: {cell_size[0] * scale_xyz[0]}x{cell_size[1] * scale_xyz[1]} scaled units^2 per cell")
     grid = las2img.las2img(points_xyz, bounds_xyz, grid_size, cell_size, discretization)
-    
+
     print()
     print(f"== Creating patches")
     all_patches = patch.compute_patches(grid, discretization, min_height, patch.NEIGHBOR_MASK_FOUR_WAY)
@@ -50,12 +50,27 @@ if __name__ == "__main__":
     labeled_grid = patch.create_labeled_grid(grid, all_patches)
     print(f"-- Computing cell neighbors")
     patch.compute_patch_neighbors(grid, labeled_grid, all_patches)
-    
+
     print()
     print(f"== Creating hierarchies")
-    hierarchies = hierarchy.compute_hierarchies(all_patches)
+    hierarchies, dist, contact = hierarchy.compute_hierarchies(all_patches)
     print(f"Created {len(hierarchies)} unique hierarchies (root nodes)")
+
+    # TODO: Remove this test print when development is done...
+    for h in hierarchies:
+        print(f"H[{h.root_id}]: {h.nodes_by_id_array}")
+
+    connected_hierarchies = hdag.find_connected_hierarchies(contact)
+
+    hdag.level_depth(hierarchies, connected_hierarchies, dist)
     
+    '''
+    for pair in connected_hierarchies:
+        print(connected_hierarchies[pair])
+    '''
+    l = len(connected_hierarchies)
+    print(f"number of connected hierarchy pairs: {l}")
+
     print()
     print("Save labeled hierarchies as raster? [y/n]")
     user_input = input(">>> ")
