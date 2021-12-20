@@ -55,21 +55,14 @@ if __name__ == "__main__":
     print(f"== Creating hierarchies")
     hierarchies, dist, contact = hierarchy.compute_hierarchies(all_patches)
     print(f"Created {len(hierarchies)} unique hierarchies (root nodes)")
-
-    # TODO: Remove this test print when development is done...
-    for h in hierarchies:
-        print(f"H[{h.root_id}]: {h.nodes_by_id_array}")
-
-    connected_hierarchies = hdag.find_connected_hierarchies(contact)
-
-    hdag.level_depth(hierarchies, connected_hierarchies, dist)
     
-    '''
-    for pair in connected_hierarchies:
-        print(connected_hierarchies[pair])
-    '''
-    l = len(connected_hierarchies)
-    print(f"number of connected hierarchy pairs: {l}")
+    print()
+    print(f"== Calculating edge weights")
+    connected_hierarchies = hdag.find_connected_hierarchies(contact)
+    print(f"Number of unique connected hierarchy pairs: {len(connected_hierarchies)}")
+    weights = np.array([1, 1, 1, 1, 1], dtype=np.float64)
+    hdag.calculate_edge_weight(hierarchies, connected_hierarchies, dist, weights)
+    
 
     print()
     print("Save labeled hierarchies as raster? [y/n]")
