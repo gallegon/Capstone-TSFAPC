@@ -81,7 +81,6 @@ def compute_hierarchies(all_patches):
         if len(parents) == 0:
             root_nodes.append(node)
         all_nodes_by_id[node.patch_id] = node
-        #print(f"Patch {patch.id}: {children}")
 
     # Compute Hierarchy for each root node
     hierarchies = []
@@ -104,21 +103,11 @@ def compute_hierarchies(all_patches):
         # Create a list of contact patches
         for node in reachable_nodes_by_id:
             contact_patches.setdefault(node, set()).add(root.patch_id)
-            # TODO: Remove this commented out line, keep for testing
-            #print(f"Root node {root.patch_id}: {node}")
     
-    # TODO: Remove this after completion
-    '''
-    for patch in contact_patches:
-        l = len(contact_patches[patch])
-        t = type(contact_patches[patch])
-        print(f"patch {patch}:{contact_patches[patch]} [len {l}] [type {t}]")
-    '''
     # Create a distance matrix from one node to another.
     node_dist_matrix, predecessors = dijkstra(
         csgraph=hierarchy_csg, directed=True, return_predecessors=True)
     
-    #print(np.matrix(dist_matrix))
     return hierarchies, node_dist_matrix, contact_patches
 
 
