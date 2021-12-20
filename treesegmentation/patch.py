@@ -85,7 +85,7 @@ def find_patches_of_height(grid, height_level, neighbor_mask=None):
 
     # For each labeled patch, create a new Patch object containing all the cells in that patch.
     return [
-        Patch(height_level, centroids[label_id], 
+        Patch(height_level, np.array(centroids[label_id]), 
             np.argwhere(labels == label_id + 1)) for label_id in range(num_labels)
     ]
 
