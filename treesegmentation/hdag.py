@@ -68,9 +68,62 @@ def calculate_hac(h):
 
     return height_adjusted_centroid, hierarchy_cell_count
 
-def calculate_edge_weight(hierarchies, connected_hierarchies, h_csg, weights):
-    hierarchy_dict = {}
+
+def set_weight_and_orientation(h1, h2, weight, h1_cc, h2_cc, hdag_csg):
+    # IDs of the top patches for a hierachy.  Paradigm for the graph is
+    # hdag_csg[parent][child] to show a directed edge from parent->child
+    h1_id = h1.root_id
+    h2_id = h2.root_id
     
+    # See if we can assign edge direction based on height level first
+    if h1.height > h2.height:
+        hdag_csg[h1_id][h2_id] = weight
+        return
+    else:
+        hdag_csg[h2_id][h1_id] = weight
+        return
+
+    # The following if/else trees are for determining edge direction
+    # if the height level of the two hierarchies are equal.
+
+    # Try to determine edge direction based on total hierarchy cell count
+    if h1_cc > h2_cc:
+        hdag_csg[h1_id][h2_id] = weight
+        return
+    else:
+        hdag_csg[h2_id][h1_id] = weight
+        return
+
+    # Try to determine direction based on the cell count of the top patch
+    # of each hierarchy
+    if h1.root.patch.cell_count > h2.root.patch.cell_count:
+        hdag_csg[h1_id][h2_id] = weight
+        return
+    else:
+        hdag_csg[h2_id][h1_id] = weight
+        return
+
+    # Finally try to determine direction based on the location of each
+    # Hierarchy's top patch centroid.
+    result = h1.root.patch.centroid - h2.root.patch.centroid
+    
+    if result[0] == 0:
+        if result[1] > 0:
+            hdag_csg[h1_id][h2_id] = weight
+        else:
+            hdag_csg[h2_id][h1_id] = weight
+    else:
+        if result[0] > 0:
+            hdag_csg[h1_id][h2_id] = weight
+        else:
+            hdag_csg[h2_id][h1_id] = weight
+
+
+def calculate_edge_weight(hierarchies, connected_hierarchies, h_csg, weights):
+    size = len(h_csg[0])
+    hdag_csg = np.zeros((size, size))
+
+    hierarchy_dict = {}
     for hierarchy in hierarchies:
         hierarchy_dict[hierarchy.root_id] = hierarchy
 
@@ -92,7 +145,7 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, h_csg, weights):
         h2_top = h2.root.patch.centroid
 
         # Calculate top and centroid distance statistic.  Reshape top patch 
-        # centroids as 2-d arrays because cdist() expects a 2-d array
+        # centroids as 2-d numpy arrays because cdist() expects a 2-d array
         top_distance = 1 / (distance.cdist(np.reshape(h1_top, (-1, 2)), 
             np.reshape(h2_top, (-1, 2)), 'euclidean')[0][0])
 
@@ -106,6 +159,8 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, h_csg, weights):
         # Finally caculate the edge weight for h1, h2
         edge_weight = np.sum((scores * weights)) 
 
+        set_weight_and_orientation(h1, h2, edge_weight, h1_cell_count, h2_cell_count, hdag_csg)
+        
         """
         print(f"**********")
         print(f"h1 cell count {h1_cell_count}")
@@ -120,5 +175,5 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, h_csg, weights):
         print(f"centroid distance: {centroid_distance}")
         print(f"edge weight: {edge_weight}")
         """
-
+    return hdag_csg
 
