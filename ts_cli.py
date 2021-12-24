@@ -8,7 +8,7 @@ from treesegmentation import patch, hierarchy, las2img, hdag
 if __name__ == "__main__":
     file_path = "sample_data/hard_nno.las"
     resolution = 1
-    discretization = 16
+    discretization = 256
     min_height = 8
 
     print(f"== Input data")
@@ -61,8 +61,8 @@ if __name__ == "__main__":
     connected_hierarchies = hdag.find_connected_hierarchies(contact)
     print(f"Number of unique connected hierarchy pairs: {len(connected_hierarchies)}")
     weights = np.array([1, 1, 1, 1, 1], dtype=np.float64)
-    hdag.calculate_edge_weight(hierarchies, connected_hierarchies, dist, weights)
-    
+    HDAG = hdag.calculate_edge_weight(hierarchies, connected_hierarchies, dist, weights)
+    #print(HDAG)
 
     print()
     print("Save labeled hierarchies as raster? [y/n]")
