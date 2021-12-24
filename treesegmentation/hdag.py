@@ -44,11 +44,13 @@ def calculate_depth(h1, h2, shared_patches, h_csg):
     return 1 / level_depth, 1 / node_depth, shared_cell_count
 
 def calculate_hac(h):
+    # "Running total" for cell count, weighted centroids
     hierarchy_cell_count = 0
 
     hac_numerator = np.array([0, 0], dtype=np.float64)
     hac_denominator = np.array([0, 0], dtype=np.float64)
 
+    # For every node in hierarchy, do the centroid weighting and cell counts
     for node in h.nodes_by_id:
         patch_cell_count = h.nodes_by_id[node].patch.cell_count
         patch_level = h.nodes_by_id[node].patch.height_level
@@ -103,8 +105,9 @@ def set_weight_and_orientation(h1, h2, weight, h1_cc, h2_cc, hdag_csg):
         hdag_csg[h2_id][h1_id] = weight
         return
 
-    # Finally try to determine direction based on the location of each
-    # Hierarchy's top patch centroid.
+    # Finally try to determine direction based on the location of each hierarchy's top patch 
+    # centroid. First look for the "bottom most" centroid (highest 'i' value), then look for
+    # the "right most" centroid (highest 'j' value).
     result = h1.root.patch.centroid - h2.root.patch.centroid
     
     if result[0] == 0:
@@ -156,24 +159,9 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, h_csg, weights):
         scores = np.array([level_depth, node_depth, shared_ratio, top_distance, centroid_distance],
             dtype=np.float64)
 
-        # Finally caculate the edge weight for h1, h2
+        # Finally caculate the edge weight for h1, h2.  Find the direction of the weighted edge.
         edge_weight = np.sum((scores * weights)) 
-
         set_weight_and_orientation(h1, h2, edge_weight, h1_cell_count, h2_cell_count, hdag_csg)
         
-        """
-        print(f"**********")
-        print(f"h1 cell count {h1_cell_count}")
-        print(f"h2 cell count {h2_cell_count}")
-        print(f"shared 1: {shared_cell_count}")
-        print(f"h1 top centroid {h1_top}")
-        print(f"h1 HAC {h1_hac}")
-        print(f"level depth:{level_depth}")
-        print(f"node depth: {node_depth}")
-        print(f"shared ratio: {shared_ratio}")
-        print(f"top distance: {top_distance}")
-        print(f"centroid distance: {centroid_distance}")
-        print(f"edge weight: {edge_weight}")
-        """
     return hdag_csg
 
