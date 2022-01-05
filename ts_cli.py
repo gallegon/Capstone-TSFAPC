@@ -3,10 +3,10 @@
 import laspy
 import numpy as np
 
-from treesegmentation import patch, hierarchy, las2img
+from .treeseg import patch, hierarchy, las2img
 
-if __name__ == "__main__":
-    file_path = "sample_data/hard_nno.las"
+def main(file_path):
+    # file_path = "sample_data/hard_nno.las"
     resolution = 1
     discretization = 32
     min_height = 16
