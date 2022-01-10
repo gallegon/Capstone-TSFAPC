@@ -194,25 +194,39 @@ class TreeSegmentation:
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
-        path = "C:\\Users\\moose\\Desktop\\.school\\capstone\\Capstone-TSFAPC\\labeled_hierarchies\\test.tif"
         if result:
+
             from qgis.core import (
                 QgsProject,
                 QgsRasterLayer,
                 QgsSingleBandGrayRenderer
             )
 
+            raster_path = "C:\\Users\\moose\\Desktop\\.school\\capstone\\Capstone-TSFAPC\\labeled_hierarchies\\test.tif"
             inst = QgsProject.instance()
-            layer = QgsRasterLayer(path, "my new layer")
-            if not layer.isValid():
-                print("Failed to load layer!")
-                return
 
-            inst.addMapLayer(layer)
-            print("Added raster layer!")
+            def createLayer(name):
+                layer = QgsRasterLayer(raster_path, name)
+                if not layer.isValid():
+                    print("Failed to load layer!")
+                    return None
 
-            renderer = QgsSingleBandGrayRenderer(layer.dataProvider(), 1)
-            layer.setRenderer(renderer)
+                inst.addMapLayer(layer)
+                print("Added raster layer!")
+                return layer
+
+            red_layer = createLayer("red channel")
+            red_renderer = QgsSingleBandGrayRenderer(red_layer.dataProvider(), 1)
+            red_layer.setRenderer(red_renderer)
+
+            green_layer = createLayer("green channel")
+            green_renderer = QgsSingleBandGrayRenderer(green_layer.dataProvider(), 2)
+            green_layer.setRenderer(green_renderer)
+
+            blue_layer = createLayer("blue layer")
+            blue_renderer = QgsSingleBandGrayRenderer(blue_layer.dataProvider(), 3)
+            blue_layer.setRenderer(blue_renderer)
+
             print("Modified raster layer!")
 
             from .ts_cli import main
