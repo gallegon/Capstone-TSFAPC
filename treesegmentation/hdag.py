@@ -1,6 +1,7 @@
 # hdag.py
 from treesegmentation import hierarchy, patch
 from scipy.spatial import distance
+from scipy.sparse import csc_matrix
 
 import numpy as np
 
@@ -71,6 +72,80 @@ def calculate_hac(h):
     return height_adjusted_centroid, hierarchy_cell_count
 
 
+def add_edge(parent, child, weight, row, col, data):
+    row.append(parent)
+    col.append(child)
+    data.append(weight)
+
+
+def set_weight_and_orientation(h1, h2, weight, h1_cc, h2_cc, hdag):
+    # IDs of the top patches for a hierachy.  Paradigm for the graph is
+    # hdag_csg[parent][child] to show a directed edge from parent->child
+    h1_id = h1.root_id
+    h2_id = h2.root_id
+    
+    row = hdag[0]
+    col = hdag[1]
+    data = hdag[2]
+    
+    # See if we can assign edge direction based on height level first
+    if h1.height > h2.height:
+        #hdag_csg[h1_id][h2_id] = weight
+        add_edge(h1_id, h2_id, weight, row, col, data)
+        return
+    else:
+        #hdag_csg[h2_id][h1_id] = weight
+        add_edge(h2_id, h1_id, weight, row, col, data)
+        return
+
+    # The following if/else trees are for determining edge direction
+    # if the height level of the two hierarchies are equal.
+
+    # Try to determine edge direction based on total hierarchy cell count
+    if h1_cc > h2_cc:
+        #hdag_csg[h1_id][h2_id] = weight
+        add_edge(h1_id, h2_id, weight, row, col, data)
+        return
+    else:
+        hdag_csg[h2_id][h1_id] = weight
+        add_edge(h2_id, h1_id, weight, row, col, data)
+        return
+
+    # Try to determine direction based on the cell count of the top patch
+    # of each hierarchy
+    if h1.root.patch.cell_count > h2.root.patch.cell_count:
+        #hdag_csg[h1_id][h2_id] = weight
+        add_edge(h1_id, h2_id, weight, row, col, data)
+        return
+    else:
+        #hdag_csg[h2_id][h1_id] = weight
+        add_edge(h2_id, h1_id, weight, row, col, data)
+        return
+
+    # Finally try to determine direction based on the location of each hierarchy's top patch 
+    # centroid. First look for the "bottom most" centroid (highest 'i' value), then look for
+    # the "right most" centroid (highest 'j' value).
+    result = h1.root.patch.centroid - h2.root.patch.centroid
+    
+    if result[0] == 0:
+        if result[1] > 0:
+            #hdag_csg[h1_id][h2_id] = weight
+            add_edge(h1_id, h2_id, weight, row, col, data)
+        else:
+            #hdag_csg[h2_id][h1_id] = weight
+            add_edge(h2_id, h1_id, weight, row, col, data)
+        return
+    else:
+        if result[0] > 0:
+            #hdag_csg[h1_id][h2_id] = weight
+            add_edge(h1_id, h2_id, weight, row, col, data)
+        else:
+            #hdag_csg[h2_id][h1_id] = weight
+            add_edge(h2_id, h1_id, weight, row, col, data)
+        return
+
+# Old code, bring back if it goes bad!
+"""
 def set_weight_and_orientation(h1, h2, weight, h1_cc, h2_cc, hdag_csg):
     # IDs of the top patches for a hierachy.  Paradigm for the graph is
     # hdag_csg[parent][child] to show a directed edge from parent->child
@@ -120,11 +195,17 @@ def set_weight_and_orientation(h1, h2, weight, h1_cc, h2_cc, hdag_csg):
             hdag_csg[h1_id][h2_id] = weight
         else:
             hdag_csg[h2_id][h1_id] = weight
-
+"""
 
 def calculate_edge_weight(hierarchies, connected_hierarchies, h_csg, weights):
-    size = len(h_csg[0])
-    hdag_csg = np.zeros((size, size))
+    #size = len(h_csg[0])
+    #hdag_csg = np.zeros((size, size))
+
+    row = []
+    col = []
+    data = []
+    
+    hdag = [row, col, data]
 
     hierarchy_dict = {}
     for hierarchy in hierarchies:
@@ -157,11 +238,28 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, h_csg, weights):
         
         # Convert the statistics to a numpy float array
         scores = np.array([level_depth, node_depth, shared_ratio, top_distance, centroid_distance],
-            dtype=np.float64)
+            dtype=np.float32)
 
         # Finally caculate the edge weight for h1, h2.  Find the direction of the weighted edge.
         edge_weight = np.sum((scores * weights)) 
-        set_weight_and_orientation(h1, h2, edge_weight, h1_cell_count, h2_cell_count, hdag_csg)
+        #set_weight_and_orientation(h1, h2, edge_weight, h1_cell_count, h2_cell_count, hdag_csg)
+        set_weight_and_orientation(h1, h2, edge_weight, h1_cell_count, h2_cell_count, hdag)
         
-    return hdag_csg
+    #return hdag_csg
+    return csc_matrix((data, (row, col)), dtype=np.float16)
+
+def partition_graph(HDAG, weight_threshold):
+    HDAG_coo = HDAG.tocoo()
+    data = HDAG_coo.data
+    row = HDAG_coo.row
+    col = HDAG_coo.col
+    #print(data[0])
+    
+    for i in range(len(data)):
+        if data[i] < weight_threshold:
+            data[i] = 0
+            row[i] = 0
+            col[i] = 0
+    #print(HDAG_coo.nonzero())
+    return HDAG_coo.count_nonzero()
 

@@ -7,9 +7,9 @@ from treesegmentation import patch, hierarchy, las2img, hdag
 
 if __name__ == "__main__":
     file_path = "sample_data/hard_nno.las"
-    resolution = 1
+    resolution = 0.5
     discretization = 256
-    min_height = 8
+    min_height = 32
 
     print(f"== Input data")
     data = laspy.read(file_path)
@@ -60,11 +60,15 @@ if __name__ == "__main__":
     print(f"== Calculating edge weights")
     connected_hierarchies = hdag.find_connected_hierarchies(contact)
     print(f"Number of unique connected hierarchy pairs: {len(connected_hierarchies)}")
-    weights = np.array([1, 1, 1, 1, 1], dtype=np.float64)
+    weights = np.array([0.2, 0.2, 0.2, 0.2, 0.2], dtype=np.float32)
     HDAG = hdag.calculate_edge_weight(hierarchies, connected_hierarchies, dist, weights)
+    HDAG_maximums = HDAG.max(axis=0)
+    
     #print(HDAG)
-
+    #print(HDAG_maximums)
+    print(hdag.partition_graph(HDAG_maximums, 0.7))
     print()
+
     print("Save labeled hierarchies as raster? [y/n]")
     user_input = input(">>> ")
     should_save = user_input == 'y' or user_input == 'Y'

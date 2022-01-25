@@ -2,8 +2,9 @@
 
 import numpy as np
 
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, coo_matrix
 from scipy.sparse.csgraph import dijkstra
+from scipy.sparse.csgraph import shortest_path
 
 
 class HierarchyNode:
@@ -64,25 +65,46 @@ def compute_hierarchies(all_patches):
     all_nodes_by_id = {}
     root_nodes = []
 
-    # Initialize a sparse matrix
-    hierarchy_csg = initialize_hierarchy_csg(len(all_patches))
+    # For compressed sparse row representation of graph
+    row = []
+    col = []
+    data = []
 
     for patch in all_patches:
         parents, children = set(), set()
         for neighbor_id in patch.neighboring_patches:
             neighbor = all_patches_by_id[neighbor_id]
             if neighbor.height_level < patch.height_level:
-                hierarchy_csg[patch.id][neighbor_id] = 1
+                #hierarchy_csg[patch.id][neighbor_id] = 1
+                #"""
+                row.append(patch.id)
+                col.append(neighbor_id)
+                data.append(1)
+                #"""
                 children.add(neighbor.id)
             elif neighbor.height_level > patch.height_level:
-                hierarchy_csg[neighbor_id][patch.id] = 1
+                #hierarchy_csg[neighbor_id][patch.id] = 1
+                #"""
+                row.append(neighbor_id)
+                col.append(patch.id)
+                data.append(1)
+                #"""
                 parents.add(neighbor.id)
         node = HierarchyNode(patch.id, patch, parents, children)
         if len(parents) == 0:
             root_nodes.append(node)
         all_nodes_by_id[node.patch_id] = node
+    
+    # Create a compressed sparse row representation of the graph
+    s = len(all_patches) + 1
+    row = np.array(row)
+    col = np.array(col)
+    data = np.array(data)
 
-    # Compute Hierarchy for each root node
+    hierarchy_csr = csr_matrix((data, (row, col)), shape=(s, s), dtype=np.int16)
+    hierarchy_csr.sum_duplicates()
+    hierarchy_csr.data[:] = 1
+
     hierarchies = []
     contact_patches = {}
 
@@ -103,10 +125,17 @@ def compute_hierarchies(all_patches):
         # Create a list of contact patches
         for node in reachable_nodes_by_id:
             contact_patches.setdefault(node, set()).add(root.patch_id)
+
+    # Convert normal numpy matrix to compressed sparse row, the thought here is to save
+    # memory.
+    
+    # TODO: Test CSR vs normal numpy array memory and time performance
+    #hierarchy_csg = csr_matrix(hierarchy_csg)
+    #hierarchy_csg = hierarchy_csr
     
     # Create a distance matrix from one node to another.
-    node_dist_matrix, predecessors = dijkstra(
-        csgraph=hierarchy_csg, directed=True, return_predecessors=True)
+    node_dist_matrix, predecessors = shortest_path(
+        csgraph=hierarchy_csr, directed=True, return_predecessors=True)
     
     return hierarchies, node_dist_matrix, contact_patches
 
