@@ -6,6 +6,8 @@ from scipy.sparse import csr_matrix, coo_matrix
 from scipy.sparse.csgraph import dijkstra
 from scipy.sparse.csgraph import shortest_path
 
+# For new node_depth implementation
+from collections import deque
 
 class HierarchyNode:
     def __init__(self, patch_id, patch, parents, children):
@@ -33,12 +35,13 @@ class HierarchyNode:
 
 
 class Hierarchy:
-    def __init__(self, root, nodes_by_id):
+    def __init__(self, root, nodes_by_id, node_depths_by_id):
         self.root_id = root.patch_id
         self.height = root.patch.height_level
         self.root = root
         self.nodes_by_id = nodes_by_id
         self.nodes_by_id_array = np.array(list(nodes_by_id.keys()))
+        self.node_depths_by_id = node_depths_by_id
 
     def __str__(self):
         lines = [
@@ -65,79 +68,52 @@ def compute_hierarchies(all_patches):
     all_nodes_by_id = {}
     root_nodes = []
 
-    # For compressed sparse row representation of graph
-    row = []
-    col = []
-    data = []
-
     for patch in all_patches:
         parents, children = set(), set()
         for neighbor_id in patch.neighboring_patches:
             neighbor = all_patches_by_id[neighbor_id]
             if neighbor.height_level < patch.height_level:
-                #hierarchy_csg[patch.id][neighbor_id] = 1
-                #"""
-                row.append(patch.id)
-                col.append(neighbor_id)
-                data.append(1)
-                #"""
                 children.add(neighbor.id)
             elif neighbor.height_level > patch.height_level:
-                #hierarchy_csg[neighbor_id][patch.id] = 1
-                #"""
-                row.append(neighbor_id)
-                col.append(patch.id)
-                data.append(1)
-                #"""
                 parents.add(neighbor.id)
         node = HierarchyNode(patch.id, patch, parents, children)
         if len(parents) == 0:
             root_nodes.append(node)
         all_nodes_by_id[node.patch_id] = node
-    
-    # Create a compressed sparse row representation of the graph
-    s = len(all_patches) + 1
-    row = np.array(row)
-    col = np.array(col)
-    data = np.array(data)
-
-    hierarchy_csr = csr_matrix((data, (row, col)), shape=(s, s), dtype=np.int16)
-    hierarchy_csr.sum_duplicates()
-    hierarchy_csr.data[:] = 1
 
     hierarchies = []
     contact_patches = {}
-
+    # Initialize a stack for computing node depth while the hierarchies are being created
+    depth_stack = deque()
     for root in root_nodes:
         # For each root, compute all reachable nodes.
         reachable_nodes_by_id = {}
+        node_depths_by_id = {}
+        root_height = root.patch.height_level
         queued_nodes = {root}
+        depth_stack.append(0)
+
         while len(queued_nodes) != 0:
             next_queue = set()
+            # Get the current node depth
+            node_depth = depth_stack.pop()
             for node in queued_nodes:
                 reachable_nodes_by_id[node.patch_id] = node
+                level_depth = root_height - node.patch.height_level
+                node_depths_by_id[node.patch_id] = (level_depth, node_depth)
                 for child_id in node.children:
                     next_queue.add(all_nodes_by_id[child_id])
+                    # For the children of the node, increment node_depth by 1
+                    depth_stack.append(node_depth + 1)
             queued_nodes = set(next_queue)
-        hierarchy = Hierarchy(root, reachable_nodes_by_id)
+        hierarchy = Hierarchy(root, reachable_nodes_by_id, node_depths_by_id)
         hierarchies.append(hierarchy)
 
         # Create a list of contact patches
         for node in reachable_nodes_by_id:
             contact_patches.setdefault(node, set()).add(root.patch_id)
 
-    # Convert normal numpy matrix to compressed sparse row, the thought here is to save
-    # memory.
-    
-    # TODO: Test CSR vs normal numpy array memory and time performance
-    #hierarchy_csg = csr_matrix(hierarchy_csg)
-    #hierarchy_csg = hierarchy_csr
-    
-    # Create a distance matrix from one node to another.
-    node_dist_matrix, predecessors = shortest_path(
-        csgraph=hierarchy_csr, directed=True, return_predecessors=True)
-    
-    return hierarchies, node_dist_matrix, contact_patches
+    return hierarchies, contact_patches
 
 
 def hierarchy_as_raster(labeled_grid, hierarchy):
@@ -149,10 +125,3 @@ def hierarchy_as_raster(labeled_grid, hierarchy):
             hierarchy_grid[x, y] = 255 * (1 - patch_height / hierarchy.height)
     return hierarchy_grid
 
-
-def initialize_hierarchy_csg(size):
-    # Initialize hierachies as a sparse matrix
-    size += 1
-    hierarchy_csg = np.zeros((size, size))
-    np.fill_diagonal(hierarchy_csg, 1)
-    return hierarchy_csg
