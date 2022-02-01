@@ -10,6 +10,8 @@ if __name__ == "__main__":
     resolution = 0.5
     discretization = 32
     min_height = 8
+    weights = np.array([0.2, 0.2, 0.2, 0.2, 0.2], dtype=np.float32)
+    weight_threshold = 0.6
 
     print(f"== Input data")
     data = laspy.read(file_path)
@@ -60,12 +62,11 @@ if __name__ == "__main__":
     print(f"== Calculating edge weights")
     connected_hierarchies = hdag.find_connected_hierarchies(contact)
     print(f"Number of unique connected hierarchy pairs: {len(connected_hierarchies)}")
-    weights = np.array([0.2, 0.2, 0.2, 0.2, 0.2], dtype=np.float32)
     HDAG, nodes = hdag.calculate_edge_weight(hierarchies, connected_hierarchies, weights)
     print()
 
-    print(f"== Partitioning graph")
-    partitioned_graph = hdag.partition_graph(HDAG, nodes, 0.5)
+    print(f"== Partitioning graph (threshold: {weight_threshold})")
+    partitioned_graph = hdag.partition_graph(HDAG, nodes, weight_threshold)
     print(f"Number of parentless source nodes: {len(partitioned_graph)}")
     print()
 
