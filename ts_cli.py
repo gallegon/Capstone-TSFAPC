@@ -6,10 +6,10 @@ import numpy as np
 from treesegmentation import patch, hierarchy, las2img, hdag
 
 if __name__ == "__main__":
-    file_path = "sample_data/hard_nno.las"
+    file_path = "sample_data/easy_nno.las"
     resolution = 0.5
-    discretization = 256
-    min_height = 32
+    discretization = 32
+    min_height = 8
 
     print(f"== Input data")
     data = laspy.read(file_path)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     print()
     print(f"== Creating hierarchies")
-    hierarchies, dist, contact = hierarchy.compute_hierarchies(all_patches)
+    hierarchies, contact = hierarchy.compute_hierarchies(all_patches)
     print(f"Created {len(hierarchies)} unique hierarchies (root nodes)")
     
     print()
@@ -61,12 +61,12 @@ if __name__ == "__main__":
     connected_hierarchies = hdag.find_connected_hierarchies(contact)
     print(f"Number of unique connected hierarchy pairs: {len(connected_hierarchies)}")
     weights = np.array([0.2, 0.2, 0.2, 0.2, 0.2], dtype=np.float32)
-    HDAG = hdag.calculate_edge_weight(hierarchies, connected_hierarchies, dist, weights)
-    HDAG_maximums = HDAG.max(axis=0)
-    
-    #print(HDAG)
-    #print(HDAG_maximums)
-    print(hdag.partition_graph(HDAG_maximums, 0.7))
+    HDAG, nodes = hdag.calculate_edge_weight(hierarchies, connected_hierarchies, weights)
+    print()
+
+    print(f"== Partitioning graph")
+    partitioned_graph = hdag.partition_graph(HDAG, nodes, 0.5)
+    print(f"Number of parentless source nodes: {len(partitioned_graph)}")
     print()
 
     print("Save labeled hierarchies as raster? [y/n]")
