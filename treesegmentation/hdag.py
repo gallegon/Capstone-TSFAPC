@@ -6,6 +6,16 @@ from scipy.sparse import csc_matrix
 import numpy as np
 
 
+class Hdag:
+    def __init__(self):
+        self.nodes = {}
+
+    # Initialize the graph from an array of hierarchies
+    def initialize_from_hierarchies(self, hierarchies):
+        for hierarchy in hierarchies:
+            self.nodes[hierarchy.root_id] = HdagNode(hierarchy)
+
+
 class HdagEdge:
     def __init__(self, node, weight):
         self.node = node
@@ -18,6 +28,13 @@ class HdagNode:
         self.root = root
         self.parents = {}
         self.children = {}
+
+    # add a parent to a node
+    def add_parent(self, node):
+        self.parents[node.id] = node
+
+    def add_child(self, node):
+        self.children[node.id] = node
 
 
 class Partition:
@@ -177,8 +194,10 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, weights):
 
     hierarchy_dict = {}
     hdag_nodes = {}
+
     for hierarchy in hierarchies:
         hierarchy_dict[hierarchy.root_id] = hierarchy
+
 
     for i, j in connected_hierarchies:
         h1 = hierarchy_dict[i]
@@ -213,8 +232,7 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, weights):
             dtype=np.float32)
 
         # Finally caculate the edge weight for h1, h2.  Find the direction of the weighted edge.
-        edge_weight = np.sum((scores * weights)) 
-        #set_weight_and_orientation(h1, h2, edge_weight, h1_cell_count, h2_cell_count, hdag_csg)
+        edge_weight = np.sum((scores * weights))
         set_weight_and_orientation(h1, h2, edge_weight, h1_cell_count, h2_cell_count, hdag)
         
     #return hdag_csg
@@ -301,6 +319,21 @@ def partition_graph(HDAG, hdag_nodes, weight_threshold):
     return source_nodes
 
 
+def partitions_to_labeled_grid(partitions, x, y):
+    labeled_grid = np.zeros(shape=(x,y), dtype=np.int64)
+    for partition in partitions:
+        partition_cells = []
+        #print(partition.__dict__)
+        partition_cells.append(partition.root.root.patch.cells)
+        for child in partition.children:
+            for patch in partition.children[child].root.nodes_by_id:
+                #print(partition.children[child].root.nodes_by_id[patch].patch.__dict__)
+                partition_cells.append(partition.children[child].root.nodes_by_id[patch].patch.cells)
+        for cells in partition_cells:
+            for x, y in cells:
+                labeled_grid[x][y] = partition.id
+    print(labeled_grid)
+    return labeled_grid
 
 
 

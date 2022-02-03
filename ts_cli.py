@@ -1,4 +1,5 @@
 # ts_cli.py
+import random
 
 import laspy
 import numpy as np
@@ -6,12 +7,25 @@ import numpy as np
 from treesegmentation import patch, hierarchy, las2img, hdag
 
 if __name__ == "__main__":
-    file_path = "sample_data/easy_nno.las"
+    file_path = "sample_data/hard_nno.las"
     resolution = 0.5
-    discretization = 32
-    min_height = 8
-    weights = np.array([0.2, 0.2, 0.2, 0.2, 0.2], dtype=np.float32)
-    weight_threshold = 0.6
+    discretization = 256
+    min_height = 4
+
+    # For weighted graph
+    level_depth_weight = 0.2
+    node_depth_weight = 0.2
+    shared_ratio_weight = 0.2
+    top_distance_weight = 0.2
+    centroid_distance_weight = 0.2
+
+    # Convert the weights into a numpy array
+    weights = np.array([level_depth_weight, node_depth_weight,
+                        shared_ratio_weight, top_distance_weight,
+                        centroid_distance_weight], dtype=np.float32)
+
+    # graph partitioning threshold
+    weight_threshold = 0.25
 
     print(f"== Input data")
     data = laspy.read(file_path)
@@ -70,6 +84,9 @@ if __name__ == "__main__":
     print(f"Number of parentless source nodes: {len(partitioned_graph)}")
     print()
 
+    print(f"== Labeling partitions")
+    labeled_partitions = hdag.partitions_to_labeled_grid(partitioned_graph, grid_size[0], grid_size[1])
+
     print("Save labeled hierarchies as raster? [y/n]")
     user_input = input(">>> ")
     should_save = user_input == 'y' or user_input == 'Y'
@@ -81,12 +98,25 @@ if __name__ == "__main__":
 
         image_grayscale = ((1 - grid / discretization) * 255).transpose().astype("uint8")
         r, g, b = image_grayscale.copy(), image_grayscale.copy(), image_grayscale.copy()
+        '''
         for hierarchy in hierarchies:
             for y, x in hierarchy.root.patch.cells:
                 r[x, y] = 255
                 g[x, y] = 0
                 b[x, y] = 0
-
+        '''
+        for x, y in np.ndindex(len(grid[0]), len(grid[1])):
+            if labeled_partitions[x][y] != 0:
+                r[x, y] = labeled_partitions[x][y] % 256
+                g[x, y] = labeled_partitions[x][y] % 256
+                b[x, y] = labeled_partitions[x][y] % 256
+        '''    
+        for i in range(0, grid[0]):
+            for j in range(0, grid[1]):
+                r[x, y] = labeled_grid[i][j] % 256
+                g[x, y] = labeled_grid[i][j] % 256
+                b[x, y] = labeled_grid[i][j] % 256
+                '''
         image_color = np.dstack((r, g, b))
         img = Image.fromarray(image_color, "RGB")
         # Format the name and save the image.
