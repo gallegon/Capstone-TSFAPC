@@ -4,20 +4,22 @@ import random
 import laspy
 import numpy as np
 
+from scipy.ndimage import gaussian_filter
+
 from treesegmentation import patch, hierarchy, las2img, hdag
 
 if __name__ == "__main__":
-    file_path = "sample_data/hard_nno.las"
-    resolution = 0.5
+    file_path = "sample_data/004_las.las"
+    resolution = 1
     discretization = 256
-    min_height = 4
+    min_height = 16
 
     # For weighted graph
-    level_depth_weight = 0.2
-    node_depth_weight = 0.2
-    shared_ratio_weight = 0.2
-    top_distance_weight = 0.2
-    centroid_distance_weight = 0.2
+    level_depth_weight = 0.84
+    node_depth_weight = 1.07
+    shared_ratio_weight = -0.11
+    top_distance_weight = 0.77
+    centroid_distance_weight = 0.0
 
     # Convert the weights into a numpy array
     weights = np.array([level_depth_weight, node_depth_weight,
@@ -25,7 +27,7 @@ if __name__ == "__main__":
                         centroid_distance_weight], dtype=np.float32)
 
     # graph partitioning threshold
-    weight_threshold = 0.25
+    weight_threshold = 0.4
 
     print(f"== Input data")
     data = laspy.read(file_path)
@@ -64,6 +66,7 @@ if __name__ == "__main__":
     print(f"Created {len(all_patches)} unique patches")
     print(f"-- Labeling grid")
     labeled_grid = patch.create_labeled_grid(grid, all_patches)
+    gaussian_filter(labeled_grid, sigma=1)
     print(f"-- Computing cell neighbors")
     patch.compute_patch_neighbors(grid, labeled_grid, all_patches)
 
@@ -76,11 +79,11 @@ if __name__ == "__main__":
     print(f"== Calculating edge weights")
     connected_hierarchies = hdag.find_connected_hierarchies(contact)
     print(f"Number of unique connected hierarchy pairs: {len(connected_hierarchies)}")
-    HDAG, nodes = hdag.calculate_edge_weight(hierarchies, connected_hierarchies, weights)
+    HDAG = hdag.calculate_edge_weight(hierarchies, connected_hierarchies, weights)
     print()
 
     print(f"== Partitioning graph (threshold: {weight_threshold})")
-    partitioned_graph = hdag.partition_graph(HDAG, nodes, weight_threshold)
+    partitioned_graph = hdag.partition_graph(HDAG, weight_threshold)
     print(f"Number of parentless source nodes: {len(partitioned_graph)}")
     print()
 
@@ -106,10 +109,10 @@ if __name__ == "__main__":
                 b[x, y] = 0
         '''
         for x, y in np.ndindex(len(grid[0]), len(grid[1])):
-            if labeled_partitions[x][y] != 0:
-                r[x, y] = labeled_partitions[x][y] % 256
-                g[x, y] = labeled_partitions[x][y] % 256
-                b[x, y] = labeled_partitions[x][y] % 256
+            #if labeled_partitions[x][y] != 0:
+            r[x, y] = labeled_partitions[x][y] % 256
+            g[x, y] = (labeled_partitions[x][y] * 2) % 256
+            b[x, y] = (labeled_partitions[x][y] * 4) % 256
         '''    
         for i in range(0, grid[0]):
             for j in range(0, grid[1]):
