@@ -42,6 +42,8 @@ class Hierarchy:
         self.nodes_by_id = nodes_by_id
         self.nodes_by_id_array = np.array(list(nodes_by_id.keys()))
         self.node_depths_by_id = node_depths_by_id
+        self.height_adjusted_centroid = None
+        self.cell_count = 0
 
     def __str__(self):
         lines = [
@@ -107,6 +109,11 @@ def compute_hierarchies(all_patches):
                     depth_stack.append(node_depth + 1)
             queued_nodes = set(next_queue)
         hierarchy = Hierarchy(root, reachable_nodes_by_id, node_depths_by_id)
+        # Calculate and set the height-adjusted centroid and cell_count for this
+        # hierarchy
+        hac, cell_count = calculate_hac(hierarchy)
+        hierarchy.height_adjusted_centroid = hac
+        hierarchy.cell_count = cell_count
         hierarchies.append(hierarchy)
 
         # Create a list of contact patches
@@ -124,4 +131,31 @@ def hierarchy_as_raster(labeled_grid, hierarchy):
             patch_height = hierarchy.nodes_by_id[patch_id].patch.height_level
             hierarchy_grid[x, y] = 255 * (1 - patch_height / hierarchy.height)
     return hierarchy_grid
+
+
+def calculate_hac(h):
+    # "Running total" for cell count, weighted centroids
+    hierarchy_cell_count = 0
+
+    hac_numerator = np.array([0, 0], dtype=np.float64)
+    hac_denominator = np.array([0, 0], dtype=np.float64)
+
+    # For every node in hierarchy, do the centroid weighting and cell counts
+    for node in h.nodes_by_id:
+        patch_cell_count = h.nodes_by_id[node].patch.cell_count
+        patch_level = h.nodes_by_id[node].patch.height_level
+        dh = h.height - patch_level
+
+        patch_centroid = h.nodes_by_id[node].patch.centroid
+
+        hierarchy_cell_count += patch_cell_count
+
+        hac_constant = patch_cell_count * (dh + 1)
+        hac_constant_np = np.array([hac_constant, hac_constant])
+
+        hac_numerator += hac_constant_np * patch_centroid
+        hac_denominator += hac_constant_np
+
+    height_adjusted_centroid = hac_numerator / hac_denominator
+    return height_adjusted_centroid, hierarchy_cell_count
 
