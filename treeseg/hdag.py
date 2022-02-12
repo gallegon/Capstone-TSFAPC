@@ -1,5 +1,4 @@
 # hdag.py
-from treesegmentation import hierarchy, patch
 from scipy.spatial import distance
 from scipy.ndimage import gaussian_filter
 
