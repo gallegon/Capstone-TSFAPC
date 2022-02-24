@@ -1,7 +1,7 @@
 # patch.py
 
 import numpy as np
-from scipy.ndimage import label
+from scipy.ndimage import label, center_of_mass
 
 
 NEIGHBOR_MASK_FOUR_WAY = [
@@ -19,11 +19,13 @@ NEIGHBOR_MASK_EIGHT_WAY = [
 class Patch:
     ID = 1
     
-    def __init__(self, height_level, cells=[]):
+    def __init__(self, height_level, centroid, cells=[]):
         self.height_level = height_level
+        self.cell_count = len(cells)
         self.cells = [] if cells is None else cells
         self.neighboring_patches = set()
         self.id = Patch.ID
+        self.centroid = centroid
         Patch.ID += 1
     
     def __str__(self):
@@ -68,6 +70,7 @@ def compute_patches(grid, discretization, min_height, neighbor_mask=None):
 
 
 def find_patches_of_height(grid, height_level, neighbor_mask=None):
+    from scipy.ndimage import gaussian_filter
     neighbor_mask = NEIGHBOR_MASK_FOUR_WAY if neighbor_mask is None else neighbor_mask
     # Create a 2d boolean array of cells (a mask).
     # Cells with height == height_level are True, otherwise False.
@@ -76,10 +79,18 @@ def find_patches_of_height(grid, height_level, neighbor_mask=None):
     # The neighbor_mask dictates which cells are adjacent to each other.
     # Gives each patch a unique label.
     labels, num_labels = label(objects_mask, neighbor_mask)
+
+    # labels = gaussian_filter(labels, sigma=0.3)
+
+
+    # Find the centroids for these patches
+    index = np.arange(1, num_labels + 1)
+    centroids = center_of_mass(objects_mask, labels, index)
+
     # For each labeled patch, create a new Patch object containing all the cells in that patch.
     return [
-        Patch(height_level, np.argwhere(labels == label_id + 1))
-        for label_id in range(num_labels)
+        Patch(height_level, np.array(centroids[label_id]), 
+            np.argwhere(labels == label_id + 1)) for label_id in range(num_labels)
     ]
 
 
