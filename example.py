@@ -180,9 +180,9 @@ class Example:
                 self.tr(u'&Example'),
                 action)
             self.iface.removeToolBarIcon(action)
-            
-            
-    
+
+
+
 
     def run(self):
         """Run method that performs all the real work"""
@@ -207,7 +207,7 @@ class Example:
             # shared_ratio_weight = -0.11
             # top_distance_weight = 0.77
             # centroid_distance_weight = 0.0
-            userData = treeseg_lib.UserInfo()
+            user_data = dict()
 
             level_depth_weight = float(self.dlg.level_depth.text())
             node_depth_weight = float(self.dlg.node_depth.text())
@@ -216,24 +216,22 @@ class Example:
             centroid_distance_weight = float(self.dlg.centroid_distance.text())
 
             # Convert the weights into a numpy array
-            userData.weights = np.array([level_depth_weight, node_depth_weight,
+            user_data["weights"] = np.array([level_depth_weight, node_depth_weight,
                                 shared_ratio_weight, top_distance_weight,
                                 centroid_distance_weight], dtype=np.float32)
 
             # graph partitioning threshold
-            userData.weight_threshold = float(self.dlg.weight_threshold.text())
+            user_data["weight_threshold"] = float(self.dlg.weight_threshold.text())
 
+            user_data["input_file_path"] = self.dlg.file_browser.filePath()
+            user_data["resolution"] = float(self.dlg.resolution_spin_box.text())
+            user_data["discretization"] = int(float(self.dlg.discretization_spin_box.text()))
+            user_data["min_height"] = int(float(self.dlg.min_height_spin_box.text()))
+            user_data["save_labeled_raster"] = self.dlg.save_hierarchies_radio_button.isChecked()
+            user_data["labeled_raster_save_path"] = self.dlg.h_save_location.filePath()
 
-            
-            userData.file_path = self.dlg.file_browser.filePath()
-            userData.resolution = float(self.dlg.resolution_spin_box.text())
-            userData.discretization = int(float(self.dlg.discretization_spin_box.text()))
-            userData.min_height = int(float(self.dlg.min_height_spin_box.text()))
-            userData.should_save = self.dlg.save_hierarchies_radio_button.isChecked()
-            userData.save_path =  self.dlg.h_save_location.filePath()
-            
-            treeseg_lib.runAlgo(userData)
-            
+            treeseg_lib.run_algo(user_data)
+
             # qtw.QMessageBox.information(self.dlg, "Radio", "Radio: {}".format(self.dlg.save_hierarchies_radio_button.isChecked()))
             # qtw.QMessageBox.information(self.dlg, "Spin Box", "Discretization: {}".format(self.dlg.discretization_spin_box.text()))
             # qtw.QMessageBox.information(self.dlg, "File Browse", "File Browser selected: {}".format(self.dlg.file_browser.filePath()))

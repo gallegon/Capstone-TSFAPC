@@ -8,4 +8,6 @@ hierarchy_rasters/
 hierarchy_rasters/*
 labeled_hierarchies/
 labeled_hierarchies/*
+patches_rasters/
+patches_rasters/*
 *.old
