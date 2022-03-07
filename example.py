@@ -227,8 +227,8 @@ class Example:
             user_data["resolution"] = float(self.dlg.resolution_spin_box.text())
             user_data["discretization"] = int(float(self.dlg.discretization_spin_box.text()))
             user_data["min_height"] = int(float(self.dlg.min_height_spin_box.text()))
-            user_data["save_labeled_raster"] = self.dlg.save_hierarchies_radio_button.isChecked()
-            user_data["labeled_raster_save_path"] = self.dlg.h_save_location.filePath()
+            user_data["save_partition_raster"] = self.dlg.save_hierarchies_radio_button.isChecked()
+            user_data["partition_raster_save_path"] = self.dlg.h_save_location.filePath()
 
             treeseg_lib.run_algo(user_data)
 

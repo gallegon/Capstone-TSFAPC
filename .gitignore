@@ -10,4 +10,8 @@ labeled_hierarchies/
 labeled_hierarchies/*
 patches_rasters/
 patches_rasters/*
+partition_rasters/
+partition_rasters/*
+grid_rasters/
+grid_rasters/*
 *.old
