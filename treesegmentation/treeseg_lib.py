@@ -182,37 +182,38 @@ def handle_partitions_to_labeled_grid(partitioned_graph, grid_size):
 
 
 def handle_label_points(labeled_partitions, points_xyz, point_count, min_xyz, cell_size):
-    labeled_points, tree_cells = laslabel(labeled_partitions, points_xyz, point_count, min_xyz, cell_size)
+    labeled_points = laslabel(labeled_partitions, points_xyz, point_count, min_xyz, cell_size)
 
     return {
-        "labeled_points": labeled_points,
-        "tree_cells": tree_cells
+        "labeled_points": labeled_points
     }
 
 
-def handle_save_tree_raster(save_tree_raster, tree_raster_save_path, tree_cells, grid, input_file_path, resolution, discretization):
+def handle_save_tree_raster(save_tree_raster, tree_raster_save_path, partitioned_graph, labeled_partitions, grid, input_file_path, resolution, discretization):
     if not save_tree_raster:
         return
 
-    for tree, entry in enumerate(tree_cells.items()):
-        id, cells = entry
+    for index, partition in enumerate(partitioned_graph):
+        id = partition.id
         if id == 0:
             continue
-        # channel = grid.transpose()
+
+        col, row = np.indices((labeled_partitions.shape[1], labeled_partitions.shape[0]))
+        mask = labeled_partitions[row, col] == id
+
         channel = ((1 - grid / discretization) * 255).transpose().astype("uint8")
         r = (channel % 256).astype("uint8")
         g = (channel % 256).astype("uint8")
         b = (channel % 256).astype("uint8")
 
-        for y, x in cells:
-            r[x, y] = 255
+        r[mask] = 255
 
         image_color = np.dstack((r, g, b))
         img = Image.fromarray(image_color, "RGB")
 
         os.makedirs(tree_raster_save_path, exist_ok=True)
         file_name = os.path.split(input_file_path)[1]
-        save_name = f"T{tree}_{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
+        save_name = f"T{id}_{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
         full_path = os.path.join(tree_raster_save_path, save_name)
         img.save(full_path)
 

@@ -17,9 +17,9 @@ def main():
         "input_file_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\sample_data\\004_las.las",
         "weights": weights,
         "weight_threshold": 0.8,
-        "resolution": 1,
+        "resolution": 0.75,
         "discretization": 256,
-        "min_height": 64,
+        "min_height": 32,
         "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
         "save_grid_raster": True,
         "grid_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\grid_rasters",
@@ -56,6 +56,8 @@ def main():
     result = algorithm.execute(user_data)
     print("== Result")
     print(result.keys())
+    print("== Tree Count")
+    print(len(result["partitioned_graph"]))
 
 
 if __name__ == "__main__":
