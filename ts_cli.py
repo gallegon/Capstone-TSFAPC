@@ -1,4 +1,5 @@
 from treesegmentation.treeseg_lib import *
+from timeit import default_timer
 
 
 def main():
@@ -12,39 +13,40 @@ def main():
                         centroid_distance_weight], dtype=np.float32)
 
     user_data = {
-        "input_file_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\sample_data\\hard_nno.las",
+        "input_file_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\sample_data\\004_las.las",
         "weights": weights,
         "weight_threshold": 0.8,
-        "resolution": 0.5,
+        "resolution": 1,
         "discretization": 32,
-        "min_height": 16,
+        "min_height": 8,
         "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
         "save_grid_raster": True,
         "grid_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\grid_rasters",
         "save_patches_raster": True,
         "patches_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\patches_rasters",
+        "save_centroids_raster": False,
+        "centroids_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\centroids_raster",
         "save_partition_raster": True,
         "partition_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\partition_rasters"
     }
 
     algorithm = Pipeline() \
         .then(handle_read_las_data) \
-        .then(handle_las2img)
-    if user_data["save_grid_raster"]:
-        algorithm.then(handle_save_grid_raster)
-    algorithm.then(handle_compute_patches)
-    if user_data["save_patches_raster"]:
-        algorithm.then(handle_save_patches_raster)
-    algorithm \
+        .then(handle_las2img) \
+        .then(handle_save_grid_raster) \
+        .then(handle_compute_patches) \
+        .then(handle_compute_patches_labeled_grid) \
+        .then(handle_compute_patch_neighbors) \
+        .then(handle_save_patches_raster) \
         .then(handle_compute_hierarchies) \
+        .then(handle_save_centroids_raster) \
         .then(handle_find_connected_hierarchies) \
+        .then(handle_calculate_edge_weight) \
         .then(handle_partition_graph) \
-        .then(handle_partitions_to_labeled_grid)
-    # handle_save_labeled_grid_as_image has an if checking for should_save as well,
-    # so having both ifs is redundant. Doing this to show that there is a lot of
-    # flexibility in how the Pipeline and its components are used.
-    if user_data["save_partition_raster"]:
-        algorithm.then(handle_save_partition_raster)
+        .then(handle_partitions_to_labeled_grid) \
+        .then(handle_save_partition_raster)
+
+    algorithm.intersperse(print_runtime)
 
     result = algorithm.execute(user_data)
     print("== Result")

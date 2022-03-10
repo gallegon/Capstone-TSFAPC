@@ -14,4 +14,6 @@ partition_rasters/
 partition_rasters/*
 grid_rasters/
 grid_rasters/*
+sample_data/004_las.las
+sample_data/306_las.las
 *.old
