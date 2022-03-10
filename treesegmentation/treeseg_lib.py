@@ -7,6 +7,7 @@ from .hdag import *
 from .hierarchy import *
 from .las2img import *
 from .patch import *
+from .laslabel import *
 
 
 class Pipeline:
@@ -100,7 +101,9 @@ def handle_read_las_data(input_file_path):
         "point_count": point_count,
         "bounds_xyz": bounds_xyz,
         "range_xyz": range_xyz,
-        "scale_xyz": scale_xyz
+        "scale_xyz": scale_xyz,
+        "min_xyz": min_xyz,
+        "max_xyz": max_xyz
     }
 
 
@@ -176,6 +179,44 @@ def handle_partitions_to_labeled_grid(partitioned_graph, grid_size):
     return {
         "labeled_partitions": labeled_partitions
     }
+
+
+def handle_label_points(labeled_partitions, points_xyz, point_count, min_xyz, cell_size):
+    labeled_points, tree_cells = laslabel(labeled_partitions, points_xyz, point_count, min_xyz, cell_size)
+
+    return {
+        "labeled_points": labeled_points,
+        "tree_cells": tree_cells
+    }
+
+
+def handle_save_tree_raster(save_tree_raster, tree_raster_save_path, tree_cells, grid, input_file_path, resolution, discretization):
+    if not save_tree_raster:
+        return
+
+    for tree, entry in enumerate(tree_cells.items()):
+        id, cells = entry
+        if id == 0:
+            continue
+        # channel = grid.transpose()
+        channel = ((1 - grid / discretization) * 255).transpose().astype("uint8")
+        r = (channel % 256).astype("uint8")
+        g = (channel % 256).astype("uint8")
+        b = (channel % 256).astype("uint8")
+
+        for y, x in cells:
+            r[x, y] = 255
+
+        image_color = np.dstack((r, g, b))
+        img = Image.fromarray(image_color, "RGB")
+
+        os.makedirs(tree_raster_save_path, exist_ok=True)
+        file_name = os.path.split(input_file_path)[1]
+        save_name = f"T{tree}_{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
+        full_path = os.path.join(tree_raster_save_path, save_name)
+        img.save(full_path)
+
+    print(f"    - Saved tree rasters to \"{tree_raster_save_path}\"")
 
 
 def handle_save_partition_raster(save_partition_raster, partition_raster_save_path, discretization, grid, labeled_partitions, input_file_path, resolution):
@@ -285,7 +326,8 @@ def run_algo(user_data):
         .then(handle_find_connected_hierarchies) \
         .then(handle_partition_graph) \
         .then(handle_partitions_to_labeled_grid) \
-        .then(handle_save_partition_raster)
+        .then(handle_save_partition_raster) \
+        .then(handle_save_tree_raster)
 
     result = algorithm.execute(user_data)
     return result

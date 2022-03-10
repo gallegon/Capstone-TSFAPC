@@ -118,6 +118,8 @@ def compute_hierarchies(all_patches):
         for node in reachable_nodes_by_id:
             contact_patches.setdefault(node, set()).add(root.patch_id)
 
+    print("computed hierarchies and contact patches")
+
     return hierarchies, contact_patches
 
 

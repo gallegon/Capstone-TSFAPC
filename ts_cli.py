@@ -1,4 +1,5 @@
 from treesegmentation.treeseg_lib import *
+from treesegmentation.laslabel import laslabel
 from timeit import default_timer
 
 
@@ -17,8 +18,8 @@ def main():
         "weights": weights,
         "weight_threshold": 0.8,
         "resolution": 1,
-        "discretization": 32,
-        "min_height": 8,
+        "discretization": 256,
+        "min_height": 64,
         "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
         "save_grid_raster": True,
         "grid_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\grid_rasters",
@@ -27,7 +28,9 @@ def main():
         "save_centroids_raster": False,
         "centroids_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\centroids_raster",
         "save_partition_raster": True,
-        "partition_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\partition_rasters"
+        "partition_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\partition_rasters",
+        "save_tree_raster": True,
+        "tree_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\tree_rasters"
     }
 
     algorithm = Pipeline() \
@@ -44,7 +47,9 @@ def main():
         .then(handle_calculate_edge_weight) \
         .then(handle_partition_graph) \
         .then(handle_partitions_to_labeled_grid) \
-        .then(handle_save_partition_raster)
+        .then(handle_save_partition_raster) \
+        .then(handle_label_points) \
+        .then(handle_save_tree_raster)
 
     algorithm.intersperse(print_runtime)
 
