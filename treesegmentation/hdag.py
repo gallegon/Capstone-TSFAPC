@@ -109,25 +109,38 @@ class Partition:
 
 def find_connected_hierarchies(contact_patches):
     connected_hierarchies = {}
-    for patch in contact_patches:
-        patches = contact_patches[patch]
-        p = list(patches)
+    for patches in contact_patches.values():
+        #patches = contact_patches[patch]
+        p = [h.root_id for h in patches]
+        #p = list(patches.root_id)
+        # Create a cross product of p, find unique heirarchy pairs
+        patch_combinations = itertools.combinations(p, 2)
+
+        for i, j in patch_combinations:
+            # Check if a pair exists, if not add to dictionary of pairs
+            if (i, j) in connected_hierarchies or (j, i) in connected_hierarchies:
+                continue
+            else:
+                if i != j:
+                    connected_hierarchies[(i, j)] = (i, j)
+
+        '''
         # Search for nodes that have more than one parent
         if len(p) > 1:
             # Create a cross product of p, find unique heirarchy pairs
             c = itertools.combinations(p, 2)
             # Check if a pair exists, if not add to dictionary of pairs
-            '''
-            TODO: clean this up, maybe create a list of tuples instead of a dictionary
-            see how we can reduce computations here
-            '''
+            
+            #TODO: clean this up, maybe create a list of tuples instead of a dictionary
+            #see how we can reduce computations here
+            
             for i, j in c:
                 if (i, j) in connected_hierarchies or (j, i) in connected_hierarchies:
                     continue
                 else:
                     if i != j:
                         connected_hierarchies[(i, j)] = (i, j)
-
+        '''
     return connected_hierarchies
 
 
@@ -285,6 +298,9 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, weights):
 def partition_graph(HDAG, weight_threshold):
     source_nodes = []
 
+    # map of hierarchies to partitions
+    hp_map = {}
+
     HDAG.remove_non_maximal_inbound_edges()
     HDAG.partition_by_weight_threshold(weight_threshold)
     hdag_nodes = HDAG.nodes.copy()
@@ -303,10 +319,16 @@ def partition_graph(HDAG, weight_threshold):
                 for child in hdag_nodes[node].children:
                     next_queue.add(hdag_nodes[node].children[child].node.id)
             queued_nodes = set(next_queue)
-        source_nodes.append(Partition(hdag_nodes[source].root, hierarchies))
+        # append the newly created partition to the list of source nodes
+        partition = Partition(hdag_nodes[source].root, hierarchies)
+        source_nodes.append(partition)
+
+        # create a map of hierarchies and partitions
+        for hierarchy in hierarchies:
+            hp_map[hierarchy] = partition.id
 
     # Return an array of the partitions
-    return source_nodes
+    return source_nodes, hp_map
 
 
 def partitions_to_labeled_grid(partitions, x, y):
@@ -317,11 +339,38 @@ def partitions_to_labeled_grid(partitions, x, y):
         partition_cells.append(partition.root.root.patch.cells)
         for child in partition.children:
             for patch in partition.children[child].root.nodes_by_id:
-                #print(partition.children[child].root.nodes_by_id[patch].patch.__dict__)
                 partition_cells.append(partition.children[child].root.nodes_by_id[patch].patch.cells)
         for cells in partition_cells:
             for x, y in cells:
                 labeled_grid[x][y] = partition.id
-    #print(labeled_grid)
-    # gaussian_filter(labeled_grid, sigma=1)
+
     return labeled_grid
+
+
+def adjust_partitions(all_patches, labeled_partitions, contact, hp_map):
+    adjusted_partitions = labeled_partitions.copy()
+
+    for contact_patch_id, associated_hierarchies in contact.items():
+        patch = all_patches[contact_patch_id - 1]
+        patch_cells = patch.cells
+        centroid = patch.centroid
+
+        min_distance = np.inf
+        closest_hierarchy = None
+
+        # Get the centroids for each hierarchy that claims the contact patch
+        for hierarchy in associated_hierarchies:
+            centroid_distance = (distance.cdist(np.reshape(centroid, (-1, 2)),
+                                                np.reshape(hierarchy.height_adjusted_centroid, (-1, 2)),
+                                                'euclidean')[0][0])
+
+            if centroid_distance < min_distance:
+                closest_hierarchy = hierarchy
+                min_distance = centroid_distance
+
+        partition_to_adjust = hp_map[closest_hierarchy.root_id]
+
+        for i, j in patch_cells:
+            adjusted_partitions[i][j] = partition_to_adjust
+
+    return adjusted_partitions

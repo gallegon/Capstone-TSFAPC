@@ -12,19 +12,19 @@ def main():
                         centroid_distance_weight], dtype=np.float32)
 
     user_data = {
-        "input_file_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\sample_data\\hard_nno.las",
+        "input_file_path": "sample_data/hard_nno.las",
         "weights": weights,
         "weight_threshold": 0.8,
         "resolution": 0.5,
-        "discretization": 32,
-        "min_height": 16,
+        "discretization": 64,
+        "min_height": 8,
         "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
         "save_grid_raster": True,
-        "grid_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\grid_rasters",
+        "grid_raster_save_path": "grid_rasters",
         "save_patches_raster": True,
-        "patches_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\patches_rasters",
+        "patches_raster_save_path": "patches_rasters",
         "save_partition_raster": True,
-        "partition_raster_save_path": "C:\\Users\\moose\\Desktop\\.school\\capstone\\project\\Capstone-TSFAPC\\partition_rasters"
+        "partition_raster_save_path": "partition_rasters"
     }
 
     algorithm = Pipeline() \
@@ -39,7 +39,10 @@ def main():
         .then(handle_compute_hierarchies) \
         .then(handle_find_connected_hierarchies) \
         .then(handle_partition_graph) \
-        .then(handle_partitions_to_labeled_grid)
+        .then(handle_partitions_to_labeled_grid) \
+        .then(handle_adjust_partitions) \
+        .then(handle_partitions_to_trees)
+
     # handle_save_labeled_grid_as_image has an if checking for should_save as well,
     # so having both ifs is redundant. Doing this to show that there is a lot of
     # flexibility in how the Pipeline and its components are used.

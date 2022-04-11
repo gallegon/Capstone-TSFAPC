@@ -7,6 +7,7 @@ from .hdag import *
 from .hierarchy import *
 from .las2img import *
 from .patch import *
+from .tree import *
 
 
 class Pipeline:
@@ -81,7 +82,7 @@ def handle_read_las_data(input_file_path):
     bounds_xyz = (min_xyz, max_xyz)
     range_xyz = (max_xyz - min_xyz) * scale_xyz
     points_xyz = np.array([data.X, data.Y, data.Z])
-    
+
     return {
         "points_xyz": points_xyz,
         "point_count": point_count,
@@ -135,10 +136,11 @@ def handle_find_connected_hierarchies(contact, hierarchies, weights):
 
 
 def handle_partition_graph(hdag, weight_threshold):
-    partitioned_graph = partition_graph(hdag, weight_threshold)
+    partitioned_graph, hp_map = partition_graph(hdag, weight_threshold)
 
     return {
-        "partitioned_graph": partitioned_graph
+        "partitioned_graph": partitioned_graph,
+        "hp_map": hp_map
     }
 
 
@@ -149,6 +151,24 @@ def handle_partitions_to_labeled_grid(partitioned_graph, grid_size):
     return {
         "labeled_partitions": labeled_partitions
     }
+
+
+def handle_adjust_partitions(all_patches, labeled_partitions, contact, hp_map):
+    labeled_partitions = adjust_partitions(all_patches, labeled_partitions, contact, hp_map)
+
+    return {
+        "labeled_partitions": labeled_partitions
+    }
+
+
+def handle_partitions_to_trees(partitioned_graph, labeled_partitions):
+    trees = partitions_to_trees(partitioned_graph, labeled_partitions)
+    for tree in trees:
+        print(tree.cells)
+    return {
+        "trees": trees
+    }
+
 
 
 def handle_save_partition_raster(save_partition_raster, partition_raster_save_path, discretization, grid, labeled_partitions, input_file_path, resolution):

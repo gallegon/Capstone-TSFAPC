@@ -106,7 +106,9 @@ def compute_hierarchies(all_patches):
                     # For the children of the node, increment node_depth by 1
                     depth_stack.append(node_depth + 1)
             queued_nodes = set(next_queue)
+
         hierarchy = Hierarchy(root, reachable_nodes_by_id, node_depths_by_id)
+
         # Calculate and set the height-adjusted centroid and cell_count for this
         # hierarchy
         hac, cell_count = calculate_hac(hierarchy)
@@ -116,7 +118,11 @@ def compute_hierarchies(all_patches):
 
         # Create a list of contact patches
         for node in reachable_nodes_by_id:
-            contact_patches.setdefault(node, set()).add(root.patch_id)
+            contact_patches.setdefault(node, set()).add(hierarchy)
+            # old way
+            #contact_patches.setdefault(node, set()).add(root.patch_id)
+
+    remove_non_contact_patches(contact_patches)
 
     return hierarchies, contact_patches
 
@@ -156,3 +162,19 @@ def calculate_hac(h):
 
     height_adjusted_centroid = hac_numerator / hac_denominator
     return height_adjusted_centroid, hierarchy_cell_count
+
+
+def remove_non_contact_patches(contact_patches):
+    # List of patches to remove from contact_patches
+    to_remove = []
+
+    # check if each patch is associated with more than one hierarchy, if the
+    # patch only has one hierarchy, remove it from the dictionary of contact patches
+    for patch_id, patch_list in contact_patches.items():
+        p = list(patch_list)
+        if len(p) <= 1:
+            # remove the non-contact patch item
+            to_remove.append(patch_id)
+
+    for patch_id in to_remove:
+        contact_patches.pop(patch_id)
