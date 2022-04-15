@@ -163,8 +163,11 @@ def handle_adjust_partitions(all_patches, labeled_partitions, contact, hp_map):
 
 def handle_partitions_to_trees(partitioned_graph, labeled_partitions):
     trees = partitions_to_trees(partitioned_graph, labeled_partitions)
-    for tree in trees:
-        print(tree.cells)
+
+    # For testing, there may be a bug here with disconnected trees
+    #for tree in trees:
+    #    print(tree.cells)
+
     return {
         "trees": trees
     }

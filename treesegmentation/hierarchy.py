@@ -1,9 +1,5 @@
 import numpy as np
 
-from scipy.sparse import csr_matrix, coo_matrix
-from scipy.sparse.csgraph import dijkstra
-from scipy.sparse.csgraph import shortest_path
-
 # For new node_depth implementation
 from collections import deque
 
@@ -137,6 +133,7 @@ def hierarchy_as_raster(labeled_grid, hierarchy):
     return hierarchy_grid
 
 
+# Compute the height adjusted centroid for each heirarchy
 def calculate_hac(h):
     # "Running total" for cell count, weighted centroids
     hierarchy_cell_count = 0
