@@ -343,14 +343,36 @@ def run_algo(user_data):
         .then(handle_las2img) \
         .then(handle_save_grid_raster) \
         .then(handle_compute_patches) \
+        .then(handle_compute_patches_labeled_grid) \
+        .then(handle_compute_patch_neighbors) \
         .then(handle_save_patches_raster) \
         .then(handle_compute_hierarchies) \
-        .then(handle_calculate_edge_weight) \
+        .then(handle_save_centroids_raster) \
         .then(handle_find_connected_hierarchies) \
+        .then(handle_calculate_edge_weight) \
         .then(handle_partition_graph) \
         .then(handle_partitions_to_labeled_grid) \
-        .then(handle_save_partition_raster) \
+        .then(handle_adjust_partitions) 
+        # .then(handle_partitions_to_trees)
+
+
+        
+    # handle_save_labeled_grid_as_image has an if checking for should_save as well,
+    # so having both ifs is redundant. Doing this to show that there is a lot of
+    # flexibility in how the Pipeline and its components are used.
+    if user_data["save_partition_raster"]:
+        algorithm.then(handle_save_partition_raster) \
+        .then(handle_label_points) \
         .then(handle_save_tree_raster)
 
+    algorithm.intersperse(print_runtime)
+
     result = algorithm.execute(user_data)
+    print("== Result")
+    print(result.keys())
+    print("== Tree Count")
+    print(len(result["partitioned_graph"]))
+
+
+    # result = algorithm.execute(user_data)
     return result

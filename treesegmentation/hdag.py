@@ -298,7 +298,9 @@ def adjust_partitions(all_patches, labeled_partitions, contact, hp_map):
     adjusted_partitions = labeled_partitions.copy()
 
     for contact_patch_id, associated_hierarchies in contact.items():
-        patch = all_patches[contact_patch_id - 1]
+        ps = [p for p in all_patches if p.id == contact_patch_id-1]
+        # print(f"{ps=}")
+        patch = ps[0]
         patch_cells = patch.cells
         centroid = patch.centroid
 

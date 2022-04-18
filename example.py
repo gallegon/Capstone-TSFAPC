@@ -227,8 +227,24 @@ class Example:
             user_data["resolution"] = float(self.dlg.resolution_spin_box.text())
             user_data["discretization"] = int(float(self.dlg.discretization_spin_box.text()))
             user_data["min_height"] = int(float(self.dlg.min_height_spin_box.text()))
-            user_data["save_partition_raster"] = self.dlg.save_hierarchies_radio_button.isChecked()
-            user_data["partition_raster_save_path"] = self.dlg.h_save_location.filePath()
+
+            is_checked = self.dlg.save_hierarchies_radio_button.isChecked()
+            save_location = self.dlg.h_save_location.filePath()
+
+            
+
+            user_data["save_partition_raster"] = is_checked
+            user_data["partition_raster_save_path"] = os.path.join(save_location, "partition_raster_save_path")
+
+            user_data["save_grid_raster"] = is_checked
+            user_data["grid_raster_save_path"]  = os.path.join(save_location, "grid_raster_save_path")
+
+            user_data["save_patches_raster"] = is_checked
+            user_data["patches_raster_save_path"]  = os.path.join(save_location, "patches_raster_save_path")
+
+            user_data["save_centroids_raster"] = is_checked
+            user_data["centroids_raster_save_path"]  = os.path.join(save_location, "centroids_raster_save_path")
+            user_data["neighbor_mask"] = [[1,1,1],[1,1,1],[1,1,1]]
 
             treeseg_lib.run_algo(user_data)
 
