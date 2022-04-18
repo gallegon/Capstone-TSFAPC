@@ -1,4 +1,6 @@
 from treesegmentation.treeseg_lib import *
+from treesegmentation.laslabel import laslabel
+from timeit import default_timer
 
 
 def main():
@@ -23,21 +25,26 @@ def main():
         "grid_raster_save_path": "grid_rasters",
         "save_patches_raster": True,
         "patches_raster_save_path": "patches_rasters",
+        "save_centroids_raster": False,
+        "centroids_raster_save_path": "centroids_raster",
         "save_partition_raster": True,
-        "partition_raster_save_path": "partition_rasters"
+        "partition_raster_save_path": "partition_rasters",
+        "save_tree_raster": True,
+        "tree_raster_save_path": "tree_rasters"
     }
 
     algorithm = Pipeline() \
         .then(handle_read_las_data) \
-        .then(handle_las2img)
-    if user_data["save_grid_raster"]:
-        algorithm.then(handle_save_grid_raster)
-    algorithm.then(handle_compute_patches)
-    if user_data["save_patches_raster"]:
-        algorithm.then(handle_save_patches_raster)
-    algorithm \
+        .then(handle_las2img) \
+        .then(handle_save_grid_raster) \
+        .then(handle_compute_patches) \
+        .then(handle_compute_patches_labeled_grid) \
+        .then(handle_compute_patch_neighbors) \
+        .then(handle_save_patches_raster) \
         .then(handle_compute_hierarchies) \
+        .then(handle_save_centroids_raster) \
         .then(handle_find_connected_hierarchies) \
+        .then(handle_calculate_edge_weight) \
         .then(handle_partition_graph) \
         .then(handle_partitions_to_labeled_grid) \
         .then(handle_adjust_partitions) \
@@ -47,11 +54,17 @@ def main():
     # so having both ifs is redundant. Doing this to show that there is a lot of
     # flexibility in how the Pipeline and its components are used.
     if user_data["save_partition_raster"]:
-        algorithm.then(handle_save_partition_raster)
+        algorithm.then(handle_save_partition_raster) \
+        .then(handle_label_points) \
+        .then(handle_save_tree_raster)
+
+    algorithm.intersperse(print_runtime)
 
     result = algorithm.execute(user_data)
     print("== Result")
     print(result.keys())
+    print("== Tree Count")
+    print(len(result["partitioned_graph"]))
 
 
 if __name__ == "__main__":
