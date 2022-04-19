@@ -94,6 +94,17 @@ def find_patches_of_height(grid, height_level, neighbor_mask=None):
     ]
 
 
+# Convert the patch list to a dictionary
+def patches_to_dict(all_patches):
+    patch_dict = {}
+
+    # Map the patch ID the relevant patch
+    for patch in all_patches:
+        patch_dict[patch.id] = patch
+
+    return patch_dict
+
+
 def create_labeled_grid(grid, all_patches):
     labeled_grid = np.zeros(grid.shape, dtype="int")
     for patch in all_patches:

@@ -3,6 +3,7 @@ __all__ = [
     "hierarchy",
     "patch",
     "hdag",
+    "tree",
     "laslabel",
     "treeseg_lib"
 ]

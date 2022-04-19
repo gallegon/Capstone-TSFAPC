@@ -294,11 +294,14 @@ def partitions_to_labeled_grid(partitions, x, y):
     return labeled_grid
 
 
-def adjust_partitions(all_patches, labeled_partitions, contact, hp_map):
+def adjust_partitions(patch_dict, labeled_partitions, contact, hp_map):
     adjusted_partitions = labeled_partitions.copy()
 
+    #patch_dict = patches_to_dict(all_patches)
+
     for contact_patch_id, associated_hierarchies in contact.items():
-        patch = all_patches[contact_patch_id - 1]
+        #patch = all_patches[contact_patch_id - 1]
+        patch = patch_dict[contact_patch_id]
         patch_cells = patch.cells
         centroid = patch.centroid
 

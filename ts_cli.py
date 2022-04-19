@@ -38,6 +38,7 @@ def main():
         .then(handle_las2img) \
         .then(handle_save_grid_raster) \
         .then(handle_compute_patches) \
+        .then(handle_patches_to_dict) \
         .then(handle_compute_patches_labeled_grid) \
         .then(handle_compute_patch_neighbors) \
         .then(handle_save_patches_raster) \

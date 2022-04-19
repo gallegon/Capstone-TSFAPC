@@ -129,6 +129,13 @@ def handle_compute_patches(grid, discretization, min_height, neighbor_mask):
     }
 
 
+def handle_patches_to_dict(all_patches):
+    patches_dict = patches_to_dict(all_patches)
+    return {
+        "patches_dict": patches_dict
+    }
+
+
 def handle_compute_patches_labeled_grid(grid, all_patches):
     labeled_grid = create_labeled_grid(grid, all_patches)
     return {
@@ -149,7 +156,7 @@ def handle_compute_hierarchies(all_patches):
     }
 
 
-def handle_find_connected_hierarchies(contact, hierarchies, weights):
+def handle_find_connected_hierarchies(contact):
     connected_hierarchies = find_connected_hierarchies(contact)
 
     return {
@@ -159,6 +166,7 @@ def handle_find_connected_hierarchies(contact, hierarchies, weights):
 
 def handle_calculate_edge_weight(hierarchies, connected_hierarchies, weights):
     hdag = calculate_edge_weight(hierarchies, connected_hierarchies, weights)
+
 
     return {
         "hdag": hdag
@@ -183,8 +191,8 @@ def handle_partitions_to_labeled_grid(partitioned_graph, grid_size):
     }
 
 
-def handle_adjust_partitions(all_patches, labeled_partitions, contact, hp_map):
-    labeled_partitions = adjust_partitions(all_patches, labeled_partitions, contact, hp_map)
+def handle_adjust_partitions(patches_dict, labeled_partitions, contact, hp_map):
+    labeled_partitions = adjust_partitions(patches_dict, labeled_partitions, contact, hp_map)
 
     return {
         "labeled_partitions": labeled_partitions
@@ -343,14 +351,32 @@ def run_algo(user_data):
         .then(handle_las2img) \
         .then(handle_save_grid_raster) \
         .then(handle_compute_patches) \
+        .then(handle_patches_to_dict()) \
+        .then(handle_compute_patches_labeled_grid) \
+        .then(handle_compute_patch_neighbors) \
         .then(handle_save_patches_raster) \
         .then(handle_compute_hierarchies) \
-        .then(handle_calculate_edge_weight) \
+        .then(handle_save_centroids_raster) \
         .then(handle_find_connected_hierarchies) \
+        .then(handle_calculate_edge_weight) \
         .then(handle_partition_graph) \
         .then(handle_partitions_to_labeled_grid) \
-        .then(handle_save_partition_raster) \
+        .then(handle_adjust_partitions) \
+        .then(handle_partitions_to_trees)
+
+    # handle_save_labeled_grid_as_image has an if checking for should_save as well,
+    # so having both ifs is redundant. Doing this to show that there is a lot of
+    # flexibility in how the Pipeline and its components are used.
+    if user_data["save_partition_raster"]:
+        algorithm.then(handle_save_partition_raster) \
+        .then(handle_label_points) \
         .then(handle_save_tree_raster)
 
+    algorithm.intersperse(print_runtime)
+
     result = algorithm.execute(user_data)
+    print("== Result")
+    print(result.keys())
+    print("== Tree Count")
+    print(len(result["partitioned_graph"]))
     return result
