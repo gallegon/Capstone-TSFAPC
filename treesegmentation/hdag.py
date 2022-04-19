@@ -106,6 +106,15 @@ class Partition:
         self.root = root
         self.children = hierarchies
 
+    def get_child_cells(self, child, patch):
+        return self.children[child].root.nodes_by_id[patch].patch.cells
+
+    def get_child_nodes_by_id(self, child):
+        return self.children[child].root.nodes_by_id
+
+    def get_root_patch_cells(self):
+        return self.root.root.patch.cells
+
 
 def find_connected_hierarchies(contact_patches):
     connected_hierarchies = {}
@@ -282,11 +291,12 @@ def partitions_to_labeled_grid(partitions, x, y):
     labeled_grid = np.zeros(shape=(x,y), dtype=np.int64)
     for partition in partitions:
         partition_cells = []
-        #print(partition.__dict__)
-        partition_cells.append(partition.root.root.patch.cells)
+        partition_cells.append(partition.get_root_patch_cells())
+
         for child in partition.children:
-            for patch in partition.children[child].root.nodes_by_id:
-                partition_cells.append(partition.children[child].root.nodes_by_id[patch].patch.cells)
+            for patch in partition.get_child_nodes_by_id(child):
+                partition_cells.append(partition.get_child_cells(child, patch))
+
         for cells in partition_cells:
             for x, y in cells:
                 labeled_grid[x][y] = partition.id
@@ -297,11 +307,16 @@ def partitions_to_labeled_grid(partitions, x, y):
 def adjust_partitions(patch_dict, labeled_partitions, contact, hp_map):
     adjusted_partitions = labeled_partitions.copy()
 
-    #patch_dict = patches_to_dict(all_patches)
-
+    # for each contact patch, look for the closest hierarchy and assign it
     for contact_patch_id, associated_hierarchies in contact.items():
-        #patch = all_patches[contact_patch_id - 1]
         patch = patch_dict[contact_patch_id]
+
+        # List comprehension method
+        '''
+        ps = [p for p in all_patches if p.id == contact_patch_id-1]
+        # print(f"{ps=}")
+        patch = ps[0]
+        '''
         patch_cells = patch.cells
         centroid = patch.centroid
 
@@ -314,10 +329,12 @@ def adjust_partitions(patch_dict, labeled_partitions, contact, hp_map):
                                                 np.reshape(hierarchy.height_adjusted_centroid, (-1, 2)),
                                                 'euclidean')[0][0])
 
+            # If the current hierarchy is closer, assign the patch to it
             if centroid_distance < min_distance:
                 closest_hierarchy = hierarchy
                 min_distance = centroid_distance
 
+        # Finally adjust the partitions in the labeled grid
         partition_to_adjust = hp_map[closest_hierarchy.root_id]
 
         for i, j in patch_cells:
