@@ -8,4 +8,14 @@ hierarchy_rasters/
 hierarchy_rasters/*
 labeled_hierarchies/
 labeled_hierarchies/*
+patches_rasters/
+patches_rasters/*
+partition_rasters/
+partition_rasters/*
+grid_rasters/
+grid_rasters/*
+sample_data/004_las.las
+sample_data/306_las.las
+tree_rasters/
+tree_rasters/*
 *.old

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "treesegmentation"
+version = "0.0.1"
+description = "Tree Segmentation from aerial point clouds"
+readme = "README.md"
+keywords = ["tree segmentation", "Lidar", "point cloud"]
+license = {text = "MIT License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+
+dependencies = [
+    "laspy",
+    "numpy",
+    "scipy",
+    "GDAL",
+    "PDAL",
+]

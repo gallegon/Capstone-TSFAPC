@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: treesegmentation
+Version: 0.0.1
+Summary: Tree Segmentation from aerial point clouds
+License: MIT License
+Keywords: tree segmentation,Lidar,point cloud
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Description-Content-Type: text/markdown
+
+# Capstone-TSFAPC
+CS461 OSU Capstone Tree Segmentation from Aerial Point Clouds
+
+Created by Mark G, Nicholai G, and Samuel F.
+
+To run the algorithm up to the most completed step:
+```
+python ts_cli.py
+```
+
+

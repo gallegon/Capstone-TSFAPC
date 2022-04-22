@@ -1,86 +1,72 @@
-# ts_cli.py
+from treesegmentation.treeseg_lib import *
+from treesegmentation.laslabel import laslabel
+from timeit import default_timer
 
-import laspy
-import numpy as np
 
-from treesegmentation import patch, hierarchy, las2img
+def main():
+    level_depth_weight = 0.84
+    node_depth_weight = 1.07
+    shared_ratio_weight = -0.11
+    top_distance_weight = 0.77
+    centroid_distance_weight = 0.0
+    weights = np.array([level_depth_weight, node_depth_weight,
+                        shared_ratio_weight, top_distance_weight,
+                        centroid_distance_weight], dtype=np.float32)
+
+    user_data = {
+        "input_file_path": "sample_data/hard_nno.las",
+        "weights": weights,
+        "weight_threshold": 0.8,
+        "resolution": 0.5,
+        "discretization": 64,
+        "min_height": 8,
+        "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
+        "save_grid_raster": True,
+        "grid_raster_save_path": "grid_rasters",
+        "save_patches_raster": True,
+        "patches_raster_save_path": "patches_rasters",
+        "save_centroids_raster": False,
+        "centroids_raster_save_path": "centroids_raster",
+        "save_partition_raster": True,
+        "partition_raster_save_path": "partition_rasters",
+        "save_tree_raster": True,
+        "tree_raster_save_path": "tree_rasters"
+    }
+
+    algorithm = Pipeline() \
+        .then(handle_read_las_data) \
+        .then(handle_las2img) \
+        .then(handle_save_grid_raster) \
+        .then(handle_compute_patches) \
+        .then(handle_patches_to_dict) \
+        .then(handle_compute_patches_labeled_grid) \
+        .then(handle_compute_patch_neighbors) \
+        .then(handle_save_patches_raster) \
+        .then(handle_compute_hierarchies) \
+        .then(handle_save_centroids_raster) \
+        .then(handle_find_connected_hierarchies) \
+        .then(handle_calculate_edge_weight) \
+        .then(handle_partition_graph) \
+        .then(handle_partitions_to_labeled_grid) \
+        .then(handle_adjust_partitions) \
+        .then(handle_partitions_to_trees)
+
+    # handle_save_labeled_grid_as_image has an if checking for should_save as well,
+    # so having both ifs is redundant. Doing this to show that there is a lot of
+    # flexibility in how the Pipeline and its components are used.
+    if user_data["save_partition_raster"]:
+        algorithm.then(handle_save_partition_raster) \
+        .then(handle_label_points) \
+        .then(handle_save_tree_raster)
+
+    algorithm.intersperse(print_runtime)
+
+    result = algorithm.execute(user_data)
+    print("== Result")
+    print(result.keys())
+    print("== Tree Count")
+    print(len(result["partitioned_graph"]))
+
 
 if __name__ == "__main__":
-    file_path = "sample_data/hard_nno.las"
-    resolution = 1
-    discretization = 32
-    min_height = 16
-    
-    print(f"== Input data")
-    data = laspy.read(file_path)
-    header = data.header
-    point_count = header.point_count
-    scale_xyz = header.scales
-    offset_xyz = header.offsets
-    # Keeping the mins and maxs unscaled, making them ints and not floats.
-    # Doing this because laspy sample_data.X, .Y, and .Z are all unscaled ints.
-    # However *_min and *_max are all scaled.
-    min_xyz = (np.array([header.x_min, header.y_min, header.z_min]) / scale_xyz).astype("int")
-    max_xyz = (np.array([header.x_max, header.y_max, header.z_max]) / scale_xyz).astype("int")
-    bounds_xyz = (min_xyz, max_xyz)
-    range_xyz = (max_xyz - min_xyz) * scale_xyz
-    print(f"File: {file_path}")
-    print(f"Point count: {point_count}")
-    print(f"Range X: {range_xyz[0]:.2f} scaled units")
-    print(f"Range Y: {range_xyz[1]:.2f} scaled units")
-    print(f"Range Z: {range_xyz[2]:.2f} scaled units")
-    
-    print()
-    print(f"== Creating grid")
-    points_xyz = np.array([data.X, data.Y, data.Z])
-    grid_size = np.ceil(range_xyz[:2] / resolution).astype("int")
-    cell_size = np.ceil(resolution / scale_xyz[:2]).astype("int")
-    print(f"Resolution: {resolution:.3f} scaled units^2 per pixel")
-    print(f"Height levels: {discretization} levels")
-    print(f"Height cutoff: {min_height}")
-    print(f"Grid dimensions: {grid_size[0]}x{grid_size[1]} cells^2")
-    print(f"Cell dimensions: {cell_size[0] * scale_xyz[0]}x{cell_size[1] * scale_xyz[1]} scaled units^2 per cell")
-    grid = las2img.las2img(points_xyz, bounds_xyz, grid_size, cell_size, discretization)
-    
-    print()
-    print(f"== Creating patches")
-    all_patches = patch.compute_patches(grid, discretization, min_height, patch.NEIGHBOR_MASK_FOUR_WAY)
-    print(f"Created {len(all_patches)} unique patches")
-    print(f"-- Labeling grid")
-    labeled_grid = patch.create_labeled_grid(grid, all_patches)
-    print(f"-- Computing cell neighbors")
-    patch.compute_patch_neighbors(grid, labeled_grid, all_patches)
-    
-    print()
-    print(f"== Creating hierarchies")
-    hierarchies = hierarchy.compute_hierarchies(all_patches)
-    print(f"Created {len(hierarchies)} unique hierarchies (root nodes)")
-    
-    print()
-    print("Save labeled hierarchies as raster? [y/n]")
-    user_input = input(">>> ")
-    should_save = user_input == 'y' or user_input == 'Y'
-    if should_save:
-        save_path = "./hierarchy_rasters/"
-        print(f"Saving to \"{save_path}\"")
-        from PIL import Image
-        import os.path
-
-        image_grayscale = ((1 - grid / discretization) * 255).transpose().astype("uint8")
-        r, g, b = image_grayscale.copy(), image_grayscale.copy(), image_grayscale.copy()
-        for hierarchy in hierarchies:
-            for y, x in hierarchy.root.patch.cells:
-                r[x, y] = 255
-                g[x, y] = 0
-                b[x, y] = 0
-
-        image_color = np.dstack((r, g, b))
-        img = Image.fromarray(image_color, "RGB")
-        # Format the name and save the image.
-        save_path = "./labeled_hierarchies/"
-        os.makedirs(save_path, exist_ok=True)
-        file_name = os.path.split(file_path)[1]
-        save_name = f"{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
-        full_path = os.path.join(save_path, save_name)
-        img.save(full_path)
-        print(f"Saved image to \"{full_path}\"")
+    main()
