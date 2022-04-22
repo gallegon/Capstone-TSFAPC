@@ -1,9 +1,7 @@
-# patches.py
+# patch.py
 
 import numpy as np
 from scipy.ndimage import label
-
-from las2img import las2img
 
 
 NEIGHBOR_MASK_FOUR_WAY = [
@@ -21,9 +19,9 @@ NEIGHBOR_MASK_EIGHT_WAY = [
 class Patch:
     ID = 1
     
-    def __init__(self, height_level):
+    def __init__(self, height_level, cells=[]):
         self.height_level = height_level
-        self.cells = []
+        self.cells = [] if cells is None else cells
         self.neighboring_patches = set()
         self.id = Patch.ID
         Patch.ID += 1
@@ -33,9 +31,6 @@ class Patch:
             f"Patch#{self.id}:",
             f"  height = {self.height_level}",
             f"  cell_count = {len(self.cells)}",
-            # f"  cells = [",
-            # *",\n".join([f"    ({x}, {y})" for x, y in self.cells]).splitlines(),
-            # "  ]",
             f"  neighbors = [",
             *",\n".join([f"    {neighbor}" for neighbor in self.neighboring_patches]).splitlines(),
             "  ]"
@@ -47,7 +42,6 @@ class Patch:
 
 
 def compute_patch_neighbors(grid, labeled_grid, all_patches):
-    print("== Computing neighbors")
     offsets = [(1, 0), (-1, 0), (0, 1), (0, -1)]
     grid_width, grid_height = grid.shape
     for patch in all_patches:
@@ -70,13 +64,11 @@ def compute_patches(grid, discretization, min_height, neighbor_mask=None):
     for height_level in range(min_height, discretization + 1):
         patches_of_height = find_patches_of_height(grid, height_level, neighbor_mask)
         all_patches.extend(patches_of_height)
-    
     return all_patches
 
 
 def find_patches_of_height(grid, height_level, neighbor_mask=None):
-    if neighbor_mask is None:
-        neighbor_mask = NEIGHBOR_MASK_FOUR_WAY
+    neighbor_mask = NEIGHBOR_MASK_FOUR_WAY if neighbor_mask is None else neighbor_mask
     # Create a 2d boolean array of cells (a mask).
     # Cells with height == height_level are True, otherwise False.
     objects_mask = grid == height_level
@@ -84,23 +76,18 @@ def find_patches_of_height(grid, height_level, neighbor_mask=None):
     # The neighbor_mask dictates which cells are adjacent to each other.
     # Gives each patch a unique label.
     labels, num_labels = label(objects_mask, neighbor_mask)
-    
     # For each labeled patch, create a new Patch object containing all the cells in that patch.
-    patches_at_height = []
-    for i in range(num_labels):
-        patch = Patch(height_level)
-        cells_xy = np.argwhere(labels == i + 1)
-        patch.cells = cells_xy
-        patches_at_height.append(patch)
-    
-    return patches_at_height
+    return [
+        Patch(height_level, np.argwhere(labels == label_id + 1))
+        for label_id in range(num_labels)
+    ]
 
 
 def create_labeled_grid(grid, all_patches):
     labeled_grid = np.zeros(grid.shape, dtype="int")
     for patch in all_patches:
-        for x, y in patch.cells:
-            labeled_grid[x, y] = patch.id
+        x, y = patch.cells.T
+        labeled_grid[x, y] = patch.id
     
     return labeled_grid
 
@@ -110,7 +97,7 @@ def create_and_save_colored_labeled_grid(labeled_grid, all_patches, input_file_p
     import os.path
     
     print("Saving image...")
-    # Format the data into an image appropriate format for PIL.
+    # Format the sample_data into an image appropriate format for PIL.
     # Dear god this part needs to be written literally any other way.
     import random
     labeled_raster = labeled_grid.transpose()
@@ -141,47 +128,3 @@ def create_and_save_colored_labeled_grid(labeled_grid, all_patches, input_file_p
     full_path = os.path.join(save_path, save_name)
     img.save(full_path)
     print(f"Saved image to \"{full_path}\"")
-
-
-def from_cli():
-    import sys
-    import os
-    from timeit import default_timer as timer
-    # Parse the command line arguments
-    args = sys.argv[1:]
-    if len(args) == 2:
-        discretization = 256
-    elif len(args) == 3:
-        discretization = int(args[2])
-        if not 1 <= discretization <= 256:
-            print("Discretization level must be in the range [1, 256].")
-            return None
-    else:
-        print("Invalid number of arguments.")
-        print("Usage: las2img.py file_path resolution [discretization]")
-        return None
-    file_path = args[0]
-    if not os.path.exists(file_path):
-        print("Specified input file does not exist.")
-        return None
-    resolution = float(args[1])
-
-    # TODO: Make this a CLI argument.
-    min_height_cutoff = 1
-
-    # Run and report the execution time.
-    start = timer()
-    grid = las2img(file_path, resolution, discretization)
-    elapsed = timer() - start
-    print(f"Created discretized grid in {elapsed} seconds.")
-    start = timer()
-    all_patches = compute_patches(grid, discretization, min_height_cutoff, NEIGHBOR_MASK_FOUR_WAY)
-    labeled_grid = create_labeled_grid(grid, all_patches)
-    compute_patch_neighbors(grid, labeled_grid, all_patches)
-    elapsed = timer() - start
-    print(f"Computed patches and neighbors in {elapsed} seconds.")
-    create_and_save_colored_labeled_grid(labeled_grid, all_patches, file_path, resolution, discretization)
-
-
-if __name__ == "__main__":
-    from_cli()
