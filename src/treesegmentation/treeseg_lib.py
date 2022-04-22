@@ -1,6 +1,6 @@
 import laspy
+import numpy as np
 import os.path
-import timeit
 from PIL import Image
 
 from .hdag import *
@@ -8,7 +8,6 @@ from .hierarchy import *
 from .las2img import *
 from .patch import *
 from .tree import *
-from .laslabel import *
 
 
 class Pipeline:
@@ -25,14 +24,9 @@ class Pipeline:
 
     def __init__(self):
         self.handlers = []
-        self.transformers = []
 
     def then(self, handler):
         self.handlers.append(handler)
-        return self
-
-    def intersperse(self, wrapper):
-        self.transformers.append(wrapper)
         return self
 
     def execute(self, initial):
@@ -42,13 +36,6 @@ class Pipeline:
         The required parameters for each handler are determined from the function parameters,
         and the appropriate parameters are passed from the context object to the handler.
         """
-        def identity(f, *args, **kwargs):
-            return f(*args, **kwargs)
-
-        transformer = identity
-        for t in self.transformers:
-            transformer = t(transformer)
-
         context = dict(initial)
         # For each handler:
         #   - Acquire parameters from context
@@ -68,9 +55,8 @@ class Pipeline:
 
             print(f"Executing stage [{stage}]:  {handler.__name__}({', '.join([str(param) for param in handler_params])})")
             try:
-                # Run the next handler with the appropriate parameters
-                # and apply any transforms.
-                result = transformer(handler, **acquired_params)
+                # Run the next handler with the appropriate parameters.
+                result = handler(**acquired_params)
                 # Update the context object with the key/value pairs from result.
                 if isinstance(result, dict):
                     context.update(result)
@@ -102,9 +88,7 @@ def handle_read_las_data(input_file_path):
         "point_count": point_count,
         "bounds_xyz": bounds_xyz,
         "range_xyz": range_xyz,
-        "scale_xyz": scale_xyz,
-        "min_xyz": min_xyz,
-        "max_xyz": max_xyz
+        "scale_xyz": scale_xyz
     }
 
 
@@ -122,29 +106,14 @@ def handle_las2img(points_xyz, bounds_xyz, range_xyz, scale_xyz, discretization,
 
 def handle_compute_patches(grid, discretization, min_height, neighbor_mask):
     all_patches = compute_patches(grid, discretization, min_height, neighbor_mask)
-    # labeled_grid = gaussian_filter(labeled_grid, sigma=0.4)
-
-    return {
-        "all_patches": all_patches
-    }
-
-
-def handle_patches_to_dict(all_patches):
-    patches_dict = patches_to_dict(all_patches)
-    return {
-        "patches_dict": patches_dict
-    }
-
-
-def handle_compute_patches_labeled_grid(grid, all_patches):
     labeled_grid = create_labeled_grid(grid, all_patches)
+    # labeled_grid = gaussian_filter(labeled_grid, sigma=0.4)
+    compute_patch_neighbors(grid, labeled_grid, all_patches)
+
     return {
+        "all_patches": all_patches,
         "labeled_grid": labeled_grid
     }
-
-
-def handle_compute_patch_neighbors(grid, labeled_grid, all_patches):
-    compute_patch_neighbors(grid, labeled_grid, all_patches)
 
 
 def handle_compute_hierarchies(all_patches):
@@ -156,19 +125,12 @@ def handle_compute_hierarchies(all_patches):
     }
 
 
-def handle_find_connected_hierarchies(contact):
+def handle_find_connected_hierarchies(contact, hierarchies, weights):
     connected_hierarchies = find_connected_hierarchies(contact)
-
-    return {
-        "connected_hierarchies": connected_hierarchies
-    }
-
-
-def handle_calculate_edge_weight(hierarchies, connected_hierarchies, weights):
     hdag = calculate_edge_weight(hierarchies, connected_hierarchies, weights)
 
-
     return {
+        "connected_hierarchies": connected_hierarchies,
         "hdag": hdag
     }
 
@@ -191,8 +153,8 @@ def handle_partitions_to_labeled_grid(partitioned_graph, grid_size):
     }
 
 
-def handle_adjust_partitions(patches_dict, labeled_partitions, contact, hp_map):
-    labeled_partitions = adjust_partitions(patches_dict, labeled_partitions, contact, hp_map)
+def handle_adjust_partitions(all_patches, labeled_partitions, contact, hp_map):
+    labeled_partitions = adjust_partitions(all_patches, labeled_partitions, contact, hp_map)
 
     return {
         "labeled_partitions": labeled_partitions
@@ -210,44 +172,6 @@ def handle_partitions_to_trees(partitioned_graph, labeled_partitions):
         "trees": trees
     }
 
-
-def handle_label_points(labeled_partitions, points_xyz, point_count, min_xyz, cell_size):
-    labeled_points = laslabel(labeled_partitions, points_xyz, point_count, min_xyz, cell_size)
-
-    return {
-        "labeled_points": labeled_points
-    }
-
-
-def handle_save_tree_raster(save_tree_raster, tree_raster_save_path, partitioned_graph, labeled_partitions, grid, input_file_path, resolution, discretization):
-    if not save_tree_raster:
-        return
-
-    for index, partition in enumerate(partitioned_graph):
-        id = partition.id
-        if id == 0:
-            continue
-
-        col, row = np.indices((labeled_partitions.shape[1], labeled_partitions.shape[0]))
-        mask = labeled_partitions[row, col] == id
-
-        channel = ((1 - grid / discretization) * 255).transpose().astype("uint8")
-        r = (channel % 256).astype("uint8")
-        g = (channel % 256).astype("uint8")
-        b = (channel % 256).astype("uint8")
-
-        r[mask] = 255
-
-        image_color = np.dstack((r, g, b))
-        img = Image.fromarray(image_color, "RGB")
-
-        os.makedirs(tree_raster_save_path, exist_ok=True)
-        file_name = os.path.split(input_file_path)[1]
-        save_name = f"T{id}_{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
-        full_path = os.path.join(tree_raster_save_path, save_name)
-        img.save(full_path)
-
-    print(f"    - Saved tree rasters to \"{tree_raster_save_path}\"")
 
 
 def handle_save_partition_raster(save_partition_raster, partition_raster_save_path, discretization, grid, labeled_partitions, input_file_path, resolution):
@@ -267,10 +191,10 @@ def handle_save_partition_raster(save_partition_raster, partition_raster_save_pa
     full_path = os.path.join(partition_raster_save_path, save_name)
     img.save(full_path)
 
-    print(f"    - Saved partition raster to \"{full_path}\"")
+    print(f"Saved partition raster to \"{full_path}\"")
 
 
-def handle_save_patches_raster(save_patches_raster, patches_raster_save_path, labeled_grid, input_file_path, resolution, discretization):
+def handle_save_patches_raster(save_patches_raster, patches_raster_save_path, labeled_grid, all_patches, input_file_path, resolution, discretization):
     if not save_patches_raster:
         return
 
@@ -287,7 +211,7 @@ def handle_save_patches_raster(save_patches_raster, patches_raster_save_path, la
     full_path = os.path.join(patches_raster_save_path, save_name)
     img.save(full_path)
 
-    print(f"    - Saved patches raster to \"{full_path}\"")
+    print(f"Saved patches raster to \"{full_path}\"")
 
 
 def handle_save_grid_raster(save_grid_raster, grid_raster_save_path, grid, input_file_path, resolution, discretization):
@@ -303,46 +227,7 @@ def handle_save_grid_raster(save_grid_raster, grid_raster_save_path, grid, input
     full_path = os.path.join(grid_raster_save_path, save_name)
     img.save(full_path)
 
-    print(f"    - Saved grid raster to \"{full_path}\"")
-
-
-def handle_save_centroids_raster(save_centroids_raster, centroids_raster_save_path, hierarchies, grid, input_file_path, resolution, discretization):
-    if not save_centroids_raster:
-        return
-
-    image_gray = ((1 - grid / discretization) * 255).transpose().astype("uint8")
-    r = image_gray
-    g = image_gray
-    b = image_gray
-
-    root_patches = [h.root.patch for h in hierarchies]
-    centroids = [p.centroid for p in root_patches]
-    for y, x in centroids:
-        x, y = int(x), int(y)
-        r[x, y] = 255
-        g[x, y] = 255
-        b[x, y] = 0
-
-    image_color = np.dstack((r, g, b))
-    img = Image.fromarray(image_color, "RGB")
-
-    os.makedirs(centroids_raster_save_path, exist_ok=True)
-    file_name = os.path.split(input_file_path)[1]
-    save_name = f"{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
-    full_path = os.path.join(centroids_raster_save_path, save_name)
-    img.save(full_path)
-
-    print(f"    - Saved centroids raster to \"{full_path}\"")
-
-
-def print_runtime(f):
-    def wrapper(*args, **kwargs):
-        start = timeit.default_timer()
-        result = f(*args, **kwargs)
-        elapsed = timeit.default_timer() - start
-        print(f"    - Finished in {elapsed:.2f} seconds")
-        return result
-    return wrapper
+    print(f"Saved grid raster to \"{full_path}\"")
 
 
 def run_algo(user_data):
@@ -351,33 +236,12 @@ def run_algo(user_data):
         .then(handle_las2img) \
         .then(handle_save_grid_raster) \
         .then(handle_compute_patches) \
-        .then(handle_patches_to_dict) \
-        .then(handle_compute_patches_labeled_grid) \
-        .then(handle_compute_patch_neighbors) \
         .then(handle_save_patches_raster) \
         .then(handle_compute_hierarchies) \
-        .then(handle_save_centroids_raster) \
         .then(handle_find_connected_hierarchies) \
-        .then(handle_calculate_edge_weight) \
         .then(handle_partition_graph) \
         .then(handle_partitions_to_labeled_grid) \
-        .then(handle_adjust_partitions) \
-        .then(handle_partitions_to_trees)
-
-    # handle_save_labeled_grid_as_image has an if checking for should_save as well,
-    # so having both ifs is redundant. Doing this to show that there is a lot of
-    # flexibility in how the Pipeline and its components are used.
-    if user_data["save_partition_raster"]:
-        algorithm.then(handle_save_partition_raster) \
-        .then(handle_label_points) \
-        .then(handle_save_tree_raster)
-
-    algorithm.intersperse(print_runtime)
+        .then(handle_save_partition_raster)
 
     result = algorithm.execute(user_data)
-    print("== Result")
-    print(result.keys())
-    print("== Tree Count")
-    print(len(result["partitioned_graph"]))
-
     return result

@@ -120,8 +120,6 @@ def compute_hierarchies(all_patches):
 
     remove_non_contact_patches(contact_patches)
 
-    print("computed hierarchies and contact patches")
-
     return hierarchies, contact_patches
 
 

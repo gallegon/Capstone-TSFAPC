@@ -1,0 +1,10 @@
+laspy
+numpy
+scipy
+PDAL
+GDAL
+laspy
+numpy
+scipy
+GDAL
+PDAL
