@@ -10,8 +10,13 @@ class Hdag:
     def __init__(self):
         self.nodes = {}
 
-    # Initialize the graph from an array of hierarchies
     def initialize_from_hierarchies(self, hierarchies):
+        """
+        Initialize the hierarchy directed acyclic graph from a list of generated
+        hierarchies.
+        :param hierarchies: List of Hierarchy objects
+        :return: None
+        """
         for hierarchy in hierarchies:
             self.nodes[hierarchy.root_id] = HdagNode(hierarchy)
 
@@ -116,6 +121,25 @@ class Partition:
         return self.root.root.patch.cells
 
 
+def find_connected_hierarchies(patch_dict):
+    contact_patches = set()
+    for patch in patch_dict.values():
+        hierarchies = patch.hierarchies
+        if len(hierarchies) > 1:
+            hierarchy_combinations = itertools.combinations(hierarchies, 2)
+            for h1, h2 in hierarchy_combinations:
+                h1_id = h1.root_id
+                h2_id = h2.root_id
+                if h1_id > h2_id:
+                    contact_patches.add((h1_id, h2_id))
+                else:
+                    contact_patches.add((h2_id, h1_id))
+
+    return contact_patches
+
+
+# OLD WAY
+"""
 def find_connected_hierarchies(contact_patches):
     connected_hierarchies = {}
 
@@ -134,6 +158,7 @@ def find_connected_hierarchies(contact_patches):
                     connected_hierarchies[(i, j)] = (i, j)
 
     return connected_hierarchies
+"""
 
 
 # Calculate the node depth, level depth, and shared cell count for two hierarchies
@@ -211,6 +236,15 @@ def set_weight_and_orientation(h1, h2, weight, h1_cc, h2_cc, hdag):
 
 
 def calculate_edge_weight(hierarchies, connected_hierarchies, weights):
+    """
+    Compute statistics for a pair of connected hierarchies and calculate the
+    edge weight from those statistics.  Give this weight to set_weight_and_orientation()
+    to create a directed edge in the H-DAG.  Return
+    :param hierarchies: List of Hierarchy objects
+    :param connected_hierarchies: List of connected hierarchy pairs
+    :param weights: The constants to apply to each statistic for the final weight computation
+    :return: Hdag Object (Hierarchy directed acyclic graph)
+    """
     hierarchy_dict = {}
 
     HDAG = Hdag()
@@ -250,7 +284,7 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, weights):
 
     return HDAG
 
-
+'''
 def partition_graph(HDAG, weight_threshold):
     source_nodes = []
 
@@ -285,6 +319,7 @@ def partition_graph(HDAG, weight_threshold):
 
     # Return an array of the partitions
     return source_nodes, hp_map
+'''
 
 
 def partitions_to_labeled_grid(partitions, x, y):
@@ -304,19 +339,35 @@ def partitions_to_labeled_grid(partitions, x, y):
     return labeled_grid
 
 
-def adjust_partitions(patch_dict, labeled_partitions, contact, hp_map):
+
+def adjust_partitions(patches_dict, labeled_partitions, hp_map):
+    """
+    Adjust the labeled grid so that there are no patches that belong to
+    multiple trees.  After creating the directed acyclic graph, the
+    graph is segmented at the hierarchy level, however not at the
+    patch level.  Contact patches belong to multiple hierarchies.  This
+    method assigns the patch to the closest hierarchy, making sure that a
+    patch can only belong to one tree. This is based on the height-adjusted
+    centroid of the hierarchy and the centroid of the contact patch.
+
+    :param patch_dict: Dictionary of Patch objects
+    :param labeled_partitions: NumPy array of integers
+    :param contact:
+    :param hp_map:
+    :return: NumPy array of integers which are the Tree IDs
+    """
     adjusted_partitions = labeled_partitions.copy()
 
     # for each contact patch, look for the closest hierarchy and assign it
-    for contact_patch_id, associated_hierarchies in contact.items():
-        patch = patch_dict[contact_patch_id]
+    for contact_patch_id, associated_hierarchies in patches_dict.items():
+        patch = patches_dict[contact_patch_id]
 
         # List comprehension method
-        '''
+        
         ps = [p for p in all_patches if p.id == contact_patch_id-1]
         # print(f"{ps=}")
         patch = ps[0]
-        '''
+        
         patch_cells = patch.cells
         centroid = patch.centroid
 

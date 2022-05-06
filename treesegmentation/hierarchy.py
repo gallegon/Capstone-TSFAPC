@@ -3,6 +3,7 @@ import numpy as np
 # For new node_depth implementation
 from collections import deque
 
+
 class HierarchyNode:
     def __init__(self, patch_id, patch, parents, children):
         self.patch_id = patch_id
@@ -53,7 +54,7 @@ class Hierarchy:
         return f"Hierarchy<{self.height}, {len(self.nodes_by_id)}, #{self.root_id}>"
 
 
-def compute_hierarchies(all_patches):
+def compute_hierarchies(all_patches, patch_dict):
     # Basic pipeline of what's happening:
     # - Transform every Patch into a HierarchyNode.
     # - Find the roots (nodes with no parents).
@@ -78,9 +79,10 @@ def compute_hierarchies(all_patches):
         all_nodes_by_id[node.patch_id] = node
 
     hierarchies = []
-    contact_patches = {}
+
     # Initialize a stack for computing node depth while the hierarchies are being created
     depth_stack = deque()
+
     for root in root_nodes:
         # For each root, compute all reachable nodes.
         reachable_nodes_by_id = {}
@@ -95,8 +97,11 @@ def compute_hierarchies(all_patches):
             node_depth = depth_stack.pop()
             for node in queued_nodes:
                 reachable_nodes_by_id[node.patch_id] = node
+
+                # Keep track of depth statistics
                 level_depth = root_height - node.patch.height_level
                 node_depths_by_id[node.patch_id] = (level_depth, node_depth)
+
                 for child_id in node.children:
                     next_queue.add(all_nodes_by_id[child_id])
                     # For the children of the node, increment node_depth by 1
@@ -110,19 +115,17 @@ def compute_hierarchies(all_patches):
         hac, cell_count = calculate_hac(hierarchy)
         hierarchy.height_adjusted_centroid = hac
         hierarchy.cell_count = cell_count
+
+        for node in reachable_nodes_by_id:
+            patch = patch_dict[node]
+            patch.add_hierarchy(hierarchy)
+
         hierarchies.append(hierarchy)
 
-        # Create a list of contact patches
-        for node in reachable_nodes_by_id:
-            contact_patches.setdefault(node, set()).add(hierarchy)
-            # old way
-            #contact_patches.setdefault(node, set()).add(root.patch_id)
 
-    remove_non_contact_patches(contact_patches)
+    print("computed hierarchies")
 
-    print("computed hierarchies and contact patches")
-
-    return hierarchies, contact_patches
+    return hierarchies
 
 
 def hierarchy_as_raster(labeled_grid, hierarchy):

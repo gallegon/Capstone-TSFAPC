@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy.ndimage import label, center_of_mass
+from scipy.spatial import distance
 
 
 NEIGHBOR_MASK_FOUR_WAY = [
@@ -24,6 +25,9 @@ class Patch:
         self.cell_count = len(cells)
         self.cells = [] if cells is None else cells
         self.neighboring_patches = set()
+        self.hierarchies = set()
+        self.nearest_hierarchy_id = None
+        self.nearest_hierarchy_distance = np.inf
         self.id = Patch.ID
         self.centroid = centroid
         Patch.ID += 1
@@ -41,6 +45,18 @@ class Patch:
     
     def __repr__(self):
         return f"Patch<{self.height_level}, {len(self.cells)}, #{self.id}>"
+
+    def add_hierarchy(self, hierarchy):
+        self.hierarchies.add(hierarchy)
+        for hierarchy in self.hierarchies:
+            centroid_distance = (distance.cdist(np.reshape(self.centroid, (-1, 2)),
+                                                np.reshape(hierarchy.height_adjusted_centroid, (-1, 2)),
+                                                'euclidean')[0][0])
+
+            # If the current hierarchy is closer, assign the patch to it
+            if centroid_distance < self.nearest_hierarchy_distance:
+                self.nearest_hierarchy_id = hierarchy.root_id
+                self.nearest_hierarchy_distance = centroid_distance
 
 
 def compute_patch_neighbors(grid, labeled_grid, all_patches):

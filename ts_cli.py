@@ -16,12 +16,12 @@ def main():
     user_data = {
         "input_file_path": "sample_data/hard_nno.las",
         "weights": weights,
-        "weight_threshold": 0.8,
+        "weight_threshold": 0.6,
         "resolution": 0.5,
-        "discretization": 64,
-        "min_height": 8,
+        "discretization": 256,
+        "min_height": 16,
         "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
-        "save_grid_raster": True,
+        "save_grid_raster": False,
         "grid_raster_save_path": "grid_rasters",
         "save_patches_raster": True,
         "patches_raster_save_path": "patches_rasters",
@@ -29,7 +29,7 @@ def main():
         "centroids_raster_save_path": "centroids_raster",
         "save_partition_raster": True,
         "partition_raster_save_path": "partition_rasters",
-        "save_tree_raster": True,
+        "save_tree_raster": False,
         "tree_raster_save_path": "tree_rasters"
     }
 
@@ -47,9 +47,7 @@ def main():
         .then(handle_find_connected_hierarchies) \
         .then(handle_calculate_edge_weight) \
         .then(handle_partition_graph) \
-        .then(handle_partitions_to_labeled_grid) \
-        .then(handle_adjust_partitions) \
-        .then(handle_partitions_to_trees)
+        .then(handle_trees_to_labeled_grid)
 
     # handle_save_labeled_grid_as_image has an if checking for should_save as well,
     # so having both ifs is redundant. Doing this to show that there is a lot of
@@ -64,8 +62,12 @@ def main():
     result = algorithm.execute(user_data)
     print("== Result")
     print(result.keys())
+
+    # Commented out for testing
+    '''
     print("== Tree Count")
     print(len(result["partitioned_graph"]))
+    '''
 
 
 if __name__ == "__main__":

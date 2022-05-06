@@ -147,17 +147,16 @@ def handle_compute_patch_neighbors(grid, labeled_grid, all_patches):
     compute_patch_neighbors(grid, labeled_grid, all_patches)
 
 
-def handle_compute_hierarchies(all_patches):
-    hierarchies, contact = compute_hierarchies(all_patches)
+def handle_compute_hierarchies(all_patches, patches_dict):
+    hierarchies= compute_hierarchies(all_patches, patches_dict)
 
     return {
         "hierarchies": hierarchies,
-        "contact": contact
     }
 
 
-def handle_find_connected_hierarchies(contact):
-    connected_hierarchies = find_connected_hierarchies(contact)
+def handle_find_connected_hierarchies(patches_dict):
+    connected_hierarchies = find_connected_hierarchies(patches_dict)
 
     return {
         "connected_hierarchies": connected_hierarchies
@@ -173,12 +172,20 @@ def handle_calculate_edge_weight(hierarchies, connected_hierarchies, weights):
     }
 
 
-def handle_partition_graph(hdag, weight_threshold):
-    partitioned_graph, hp_map = partition_graph(hdag, weight_threshold)
+def handle_partition_graph(hdag, weight_threshold, patches_dict):
+    trees = partition_graph(hdag, weight_threshold, patches_dict)
 
     return {
-        "partitioned_graph": partitioned_graph,
-        "hp_map": hp_map
+        "trees": trees
+    }
+
+
+def handle_trees_to_labeled_grid(trees, grid_size):
+    x_size, y_size = grid_size
+    labeled_partitions = trees_to_labeled_grid(trees, x_size, y_size)
+
+    return {
+        "labeled_partitions": labeled_partitions
     }
 
 
@@ -191,23 +198,11 @@ def handle_partitions_to_labeled_grid(partitioned_graph, grid_size):
     }
 
 
-def handle_adjust_partitions(patches_dict, labeled_partitions, contact, hp_map):
-    labeled_partitions = adjust_partitions(patches_dict, labeled_partitions, contact, hp_map)
+def handle_adjust_partitions(patches_dict, labeled_partitions, hp_map):
+    labeled_partitions = adjust_partitions(patches_dict, labeled_partitions, hp_map)
 
     return {
         "labeled_partitions": labeled_partitions
-    }
-
-
-def handle_partitions_to_trees(partitioned_graph, labeled_partitions):
-    trees = partitions_to_trees(partitioned_graph, labeled_partitions)
-
-    # For testing, there may be a bug here with disconnected trees
-    #for tree in trees:
-    #    print(tree.cells)
-
-    return {
-        "trees": trees
     }
 
 
