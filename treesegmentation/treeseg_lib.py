@@ -1,6 +1,8 @@
-import laspy
 import os.path
 import timeit
+import json
+
+import pdal
 from PIL import Image
 
 from .hdag import *
@@ -83,19 +85,43 @@ class Pipeline:
 
 
 def handle_read_las_data(input_file_path):
-    data = laspy.read(input_file_path)
-    header = data.header
-    point_count = header.point_count
-    scale_xyz = header.scales
-    # offset_xyz = header.offsets # Offsets currently not being used...
-    # Keeping the mins and maxs unscaled, making them ints and not floats.
-    # Doing this because laspy sample_data.X, .Y, and .Z are all unscaled ints.
-    # However *_min and *_max are all scaled.
-    min_xyz = (np.array([header.x_min, header.y_min, header.z_min]) / scale_xyz).astype("int")
-    max_xyz = (np.array([header.x_max, header.y_max, header.z_max]) / scale_xyz).astype("int")
+    # Construct and execute reader pipeline.
+    json_pipeline = [
+        {
+            "type": "readers.las",
+            "filename": input_file_path
+        }
+    ]
+    pdal_pipeline = pdal.Pipeline(json.dumps(json_pipeline))
+    pdal_pipeline.execute()
+
+    # Gather required data (metadata + point data) from processed .las file.
+    pdal_metadata = pdal_pipeline.metadata["metadata"]["readers.las"]
+    header_keys = [
+        "scale_x", "scale_y", "scale_z",
+        "offset_x", "offset_y", "offset_z",
+        "minx", "miny", "minz",
+        "maxx", "maxy", "maxz",
+        "count"
+    ]
+    header = {key: pdal_metadata[key] for key in header_keys}
+    pdal_data = pdal_pipeline.arrays[0]
+
+    # Structure the data from PDAL to be used by the rest of our program.
+    point_count = header["count"]
+    scale_xyz = np.array([header["scale_x"], header["scale_y"], header["scale_z"]])
+    min_xyz = (np.array([header["minx"], header["miny"], header["minz"]]) / scale_xyz).astype("int")
+    max_xyz = (np.array([header["maxx"], header["maxy"], header["maxz"]]) / scale_xyz).astype("int")
     bounds_xyz = (min_xyz, max_xyz)
     range_xyz = (max_xyz - min_xyz) * scale_xyz
-    points_xyz = np.array([data.X, data.Y, data.Z])
+
+    # Coordinates are represented using scaled floats.
+    # Want to keep arithmetic within integers for the algorithm.
+    xs = (pdal_data["X"] / scale_xyz[0]).astype("int")
+    ys = (pdal_data["Y"] / scale_xyz[2]).astype("int")
+    zs = (pdal_data["Z"] / scale_xyz[2]).astype("int")
+
+    points_xyz = np.array([xs, ys, zs])
 
     return {
         "points_xyz": points_xyz,
