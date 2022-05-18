@@ -14,12 +14,12 @@ def main():
                         centroid_distance_weight], dtype=np.float32)
 
     user_data = {
-        "input_file_path": "sample_data/hard_nno.las",
+        "input_file_path": "sample_data/medium_nno.las",
         "weights": weights,
         "weight_threshold": 0.6,
         "resolution": 0.5,
-        "discretization": 256,
-        "min_height": 16,
+        "discretization": 64,
+        "min_height": 8,
         "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
         "save_grid_raster": False,
         "grid_raster_save_path": "grid_rasters",
@@ -30,7 +30,8 @@ def main():
         "save_partition_raster": True,
         "partition_raster_save_path": "partition_rasters",
         "save_tree_raster": False,
-        "tree_raster_save_path": "tree_rasters"
+        "tree_raster_save_path": "tree_rasters",
+        "point_cloud_save_path": "labeled_point_clouds"
     }
 
     algorithm = Pipeline() \
@@ -49,6 +50,7 @@ def main():
         .then(handle_partition_graph) \
         .then(handle_trees_to_labeled_grid)
 
+    #print(user_data)
     # handle_save_labeled_grid_as_image has an if checking for should_save as well,
     # so having both ifs is redundant. Doing this to show that there is a lot of
     # flexibility in how the Pipeline and its components are used.
@@ -57,12 +59,12 @@ def main():
         .then(handle_label_points) \
         .then(handle_save_tree_raster)
 
+    algorithm.then(handle_label_point_cloud)
     algorithm.intersperse(print_runtime)
 
     result = algorithm.execute(user_data)
     print("== Result")
     print(result.keys())
-
     # Commented out for testing
     '''
     print("== Tree Count")
