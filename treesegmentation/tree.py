@@ -64,26 +64,11 @@ def partition_graph(HDAG, weight_threshold, patches_dict):
 
 
 def trees_to_labeled_grid(trees, x_size, y_size):
+    # Create a grid to label
     labeled_tree_grid = np.zeros(shape=(x_size, y_size), dtype=np.int64)
 
+    # For every tree's cells, label that cell with the tree id in labeled grid
     for tree_id, tree in trees.items():
-        #print(np.array(tree.cells))
         idx = np.array(tree.cells)
-        #print()
-        #labeled_tree_grid[[np.array(tree.cells)]] = tree_id
         labeled_tree_grid[idx[:, 0], idx[:, 1]] = tree_id
-    #print(labeled_tree_grid)
     return labeled_tree_grid
-
-# Old way
-'''
-def partitions_to_trees(partitions, labeled_partitions):
-    trees = []
-    for partition in partitions:
-        tree_id = partition.id
-        cells = np.argwhere(labeled_partitions == tree_id)
-        tree = Tree(partition, cells)
-        trees.append(tree)
-
-    return trees
-'''
