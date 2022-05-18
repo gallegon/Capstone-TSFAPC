@@ -138,29 +138,6 @@ def find_connected_hierarchies(patch_dict):
     return contact_patches
 
 
-# OLD WAY
-"""
-def find_connected_hierarchies(contact_patches):
-    connected_hierarchies = {}
-
-    # Look for through the contact patches
-    for patches in contact_patches.values():
-        p = [h.root_id for h in patches]
-        # Create a cross product of p, find unique heirarchy pairs
-        patch_combinations = itertools.combinations(p, 2)
-
-        for i, j in patch_combinations:
-            # Check if a pair exists, if not add to dictionary of pairs
-            if (i, j) in connected_hierarchies or (j, i) in connected_hierarchies:
-                continue
-            else:
-                if i != j:
-                    connected_hierarchies[(i, j)] = (i, j)
-
-    return connected_hierarchies
-"""
-
-
 # Calculate the node depth, level depth, and shared cell count for two hierarchies
 def calculate_depth(h1, h2, shared_patches):
     shared_cell_count = 0
@@ -283,43 +260,6 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, weights):
         set_weight_and_orientation(h1, h2, edge_weight, h1.cell_count, h2.cell_count, HDAG)
 
     return HDAG
-
-'''
-def partition_graph(HDAG, weight_threshold):
-    source_nodes = []
-
-    # map of hierarchies to partitions
-    hp_map = {}
-
-    HDAG.remove_non_maximal_inbound_edges()
-    HDAG.partition_by_weight_threshold(weight_threshold)
-    hdag_nodes = HDAG.nodes.copy()
-    # get parentless source nodes, these are the trees
-    sources = HDAG.get_source_nodes()
-
-    # TODO: See about making this a method for Partition class
-    # get the reachable hierarchies from each source and add it to the source
-    for source in sources:
-        hierarchies = {}
-        queued_nodes = {source}
-        while len(queued_nodes) != 0:
-            next_queue = set()
-            for node in queued_nodes:
-                hierarchies[node] = hdag_nodes[node]
-                for child in hdag_nodes[node].children:
-                    next_queue.add(hdag_nodes[node].children[child].node.id)
-            queued_nodes = set(next_queue)
-        # append the newly created partition to the list of source nodes
-        partition = Partition(hdag_nodes[source].root, hierarchies)
-        source_nodes.append(partition)
-
-        # create a map of hierarchies and partitions
-        for hierarchy in hierarchies:
-            hp_map[hierarchy] = partition.id
-
-    # Return an array of the partitions
-    return source_nodes, hp_map
-'''
 
 
 def partitions_to_labeled_grid(partitions, x, y):
