@@ -16,10 +16,10 @@ def main():
     user_data = {
         "input_file_path": "sample_data/medium_nno.las",
         "weights": weights,
-        "weight_threshold": 0.6,
-        "resolution": 0.5,
+        "weight_threshold": 0.7,
+        "resolution": 0.6,
         "discretization": 64,
-        "min_height": 8,
+        "min_height": 10,
         "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
         "save_grid_raster": False,
         "grid_raster_save_path": "grid_rasters",
@@ -31,7 +31,8 @@ def main():
         "partition_raster_save_path": "partition_rasters",
         "save_tree_raster": False,
         "tree_raster_save_path": "tree_rasters",
-        "point_cloud_save_path": "labeled_point_clouds"
+        "point_cloud_save_path": "labeled_point_clouds",
+        "espg_string": "EPSG:2027"
     }
 
     algorithm = Pipeline() \

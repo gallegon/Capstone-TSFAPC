@@ -364,7 +364,7 @@ def handle_save_centroids_raster(save_centroids_raster, centroids_raster_save_pa
     print(f"    - Saved centroids raster to \"{full_path}\"")
 
 
-def handle_label_point_cloud(input_file_path, bounds_xyz, scale_xyz, partition_raster_save_path, point_cloud_save_path, png_raster_path):
+def handle_label_point_cloud(input_file_path, bounds_xyz, scale_xyz, partition_raster_save_path, point_cloud_save_path, png_raster_path, espg_string):
     min_xyz, max_xyz = bounds_xyz
     scale_x, scale_y, scale_z = scale_xyz
 
@@ -384,8 +384,12 @@ def handle_label_point_cloud(input_file_path, bounds_xyz, scale_xyz, partition_r
     las_output_path = os.path.join(point_cloud_save_path, f"output_{current_time}.las")
 
     # spawn gdal_translate program to translate png to GeoTiff
-    translate_command = f"gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr {min_x} {min_y} {max_x} {max_y} {png_raster_path} {gtiff_output_path}"
+    translate_command = f"gdal_translate -of GTiff -a_srs {espg_string} -a_ullr {min_x} {min_y} {max_x} {max_y} {png_raster_path} {gtiff_output_path}"
     os.system(translate_command)
+
+    # run gdal_edit to reproject into a different CRS
+    edit_command = f"gdal_edit -a_srs {espg_string} {gtiff_output_path}"
+    os.system(edit_command)
 
     print(f"saved gtiff to {gtiff_output_path}")
 
