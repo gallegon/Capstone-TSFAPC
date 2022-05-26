@@ -4,6 +4,7 @@ pushd %~dp0
 
 REM Command file for Sphinx documentation
 
+set SPHINXBUILD=sphinx-build
 
 set SOURCEDIR=source
 set BUILDDIR=build

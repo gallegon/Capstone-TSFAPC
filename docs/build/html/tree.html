@@ -35,7 +35,28 @@
   <section id="tree">
 <h1>tree<a class="headerlink" href="#tree" title="Permalink to this headline">¶</a></h1>
 <p>Bazinga!</p>
-<span class="target" id="module-treesegmentation.tree"></span></section>
+<span class="target" id="module-treesegmentation.tree"></span><dl class="py function">
+<dt id="treesegmentation.tree.partition_graph">
+<code class="sig-prename descclassname"><span class="pre">treesegmentation.tree.</span></code><code class="sig-name descname"><span class="pre">partition_graph</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">HDAG</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patches_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.tree.partition_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Partition the graph based on a weight threshold.  Assign cells and patches to trees
+based on the HDAG partitioning.
+:param HDAG: Hdag object
+:param weight_threshold: float
+:param patches_dict: dictionary of patches
+:return: array of tree objects</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="treesegmentation.tree.trees_to_labeled_grid">
+<code class="sig-prename descclassname"><span class="pre">treesegmentation.tree.</span></code><code class="sig-name descname"><span class="pre">trees_to_labeled_grid</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trees</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.tree.trees_to_labeled_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>From an array of tree objects, label the grid with their unique IDs.
+:param trees: list of tree objects
+:param x_size: int
+:param y_size: int
+:return: 2D grid of labeled trees.</p>
+</dd></dl>
+
+</section>
 
 
           </div>
@@ -54,7 +75,6 @@
 
 
 <h3>Navigation</h3>
-<p><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="treesegmentation.html">treesegmentation</a><ul class="current">

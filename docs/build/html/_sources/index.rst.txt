@@ -2,7 +2,7 @@ Tree Segmentation Documentation
 ===============================
 
 .. toctree::
-    
+
     usage
     treesegmentation
 
