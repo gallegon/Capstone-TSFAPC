@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
 # -- Project information -----------------------------------------------------
 
 project = 'Tree Segmentation'
-copyright = '2022, Nicholai Gallegos, Mark Gekelman, Sam Foltz'
-author = 'Nicholai Gallegos, Mark Gekelman, Sam Foltz'
+copyright = '2022, Nicholai Gallegos, Mark Gekelman, and Sam Foltz'
+author = 'Nicholai Gallegos, Mark Gekelman, and Sam Foltz'
 
 # The full version, including alpha/beta/rc tags
 release = '0.1'
@@ -51,6 +51,9 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = 'alabaster'
+html_theme_options = {
+
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
