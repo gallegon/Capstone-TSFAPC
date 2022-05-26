@@ -12,30 +12,54 @@ class Hdag:
 
     def initialize_from_hierarchies(self, hierarchies):
         """
-        Initialize the hierarchy directed acyclic graph from a list of generated
-        hierarchies.
-        :param hierarchies: List of Hierarchy objects
+
+        :param hierarchies: list of hierarchy objects
         :return: None
         """
         for hierarchy in hierarchies:
             self.nodes[hierarchy.root_id] = HdagNode(hierarchy)
 
     def add_edge(self, parent_id, child_id, weight):
+        """
+        Add a directed edge from a parent graph node to child
+
+        :param parent_id: int
+        :param child_id: int
+        :param weight: float
+        :return: None
+        """
         parent_edge = HdagEdge(self.nodes[parent_id], weight)
         child_edge = HdagEdge(self.nodes[child_id], weight)
         self.nodes[parent_id].add_child(child_edge)
         self.nodes[child_id].add_parent(parent_edge)
 
     def remove_edge(self, parent_id, child_id):
+        """
+        Remove a directed edge from a parent graph node to child graph node.
+        :param parent_id: int
+        :param child_id: int
+        :return: None
+        """
         parent = self.nodes[parent_id]
         child = self.nodes[child_id]
         parent.remove_child(child_id)
         child.remove_parent(parent_id)
 
     def get_hdag_node(self, node_id):
+        """
+        Return the node associated with node_id from the graph.
+        :param node_id: int
+        :return: None
+        """
         return self.nodes[node_id]
 
     def remove_non_maximal_inbound_edges(self):
+        """
+        Remove all non-maximal inbound edges from a graph node.  If the node has
+        parents, only keep the parent with the greatest weighted edge.
+
+        :return: None
+        """
         # Partition based on non-maximal inbound edges
         for node_id, node in self.nodes.items():
             #
@@ -59,6 +83,12 @@ class Hdag:
                     self.remove_edge(edge, node_id)
 
     def partition_by_weight_threshold(self, weight_threshold):
+        """
+        Partition the entire graph based on a weight threshold.
+
+        :param weight_threshold: float
+        :return: None
+        """
         for node_id, node in self.nodes.items():
             edge_to_remove = -1
             for parent_id, parent in node.parents.items():
@@ -71,6 +101,10 @@ class Hdag:
                 self.remove_edge(parent_id, node_id)
 
     def get_source_nodes(self):
+        """
+        Return the parentless nodes from the graph
+        :return: None
+        """
         source_nodes = []
         for node_id, node in self.nodes.items():
             if len(node.parents) == 0:  # No parents, source node
@@ -93,38 +127,71 @@ class HdagNode:
 
     # add a parent to a node
     def add_parent(self, parent):
+        """
+        Add a parent to a node.  Helper function for Hdag class add_edge procedure.
+        :param parent: int
+        :return:
+        """
         self.parents[parent.node.id] = parent
 
     def add_child(self, child):
+        """
+        Add a child to a node.  Help function for Hdag class add_edge procedure.
+        :param child: int
+        :return:
+        """
         self.children[child.node.id] = child
 
     def remove_parent(self, parent_id):
+        """
+        Remove a parent from a node.  Helper function for Hdag class remove_edge procedure.
+        :param parent_id: int
+        :return:
+        """
         self.parents.pop(parent_id)
 
     def remove_child(self, child_id):
+        """
+        Remove a child from a node.  Helper function for Hdag class remove_edge procedure.
+        :param child_id:
+        :return:
+        """
         self.children.pop(child_id)
 
 
-class Partition:
-    def __init__(self, root, hierarchies):
-        self.id = root.root_id
-        self.root = root
-        self.children = hierarchies
-
-    def get_child_cells(self, child, patch):
-        return self.children[child].root.nodes_by_id[patch].patch.cells
-
-    def get_child_nodes_by_id(self, child):
-        return self.children[child].root.nodes_by_id
-
-    def get_root_patch_cells(self):
-        return self.root.root.patch.cells
+# class Partition:
+#     def __init__(self, root, hierarchies):
+#         self.id = root.root_id
+#         self.root = root
+#         self.children = hierarchies
+#
+#     def get_child_cells(self, child, patch):
+#         return self.children[child].root.nodes_by_id[patch].patch.cells
+#
+#     def get_child_nodes_by_id(self, child):
+#         return self.children[child].root.nodes_by_id
+#
+#     def get_root_patch_cells(self):
+#         return self.root.root.patch.cells
 
 
 def find_connected_hierarchies(patch_dict):
+    """
+    From a dictionary of all patches, find unique hierarchies that share patches.
+    :param patch_dict: dictionary of patch objects
+    :return: a list of tuples of connected hierarchies.
+    """
+
+    # initialize the list of contact patches
     contact_patches = set()
+
+    # For every patch, find which hierarchies it belongs to, create a list of combinations,
+    # attempt to add each hierachy pair to contact patches
     for patch in patch_dict.values():
         hierarchies = patch.hierarchies
+
+        # Only try to find combinations for patches that are associated with more than
+        # one hierarchy.
         if len(hierarchies) > 1:
             hierarchy_combinations = itertools.combinations(hierarchies, 2)
             for h1, h2 in hierarchy_combinations:
@@ -138,8 +205,16 @@ def find_connected_hierarchies(patch_dict):
     return contact_patches
 
 
-# Calculate the node depth, level depth, and shared cell count for two hierarchies
 def calculate_depth(h1, h2, shared_patches):
+    """
+    Calculate node depth, level depth, and shared cell count for a pair of
+    connected hierarchies.
+
+    :param h1: hierarchy
+    :param h2: hierarchy
+    :param shared_patches: list of patch objects
+    :return: depth statistics level_depth (float), node_depth(float), shared_cell_count (int)
+    """
     shared_cell_count = 0
 
     level_depth = np.inf
@@ -161,6 +236,16 @@ def calculate_depth(h1, h2, shared_patches):
 
 # Calculate edge orientation and weight for each unique heirarchy pair
 def set_weight_and_orientation(h1, h2, weight, h1_cc, h2_cc, hdag):
+    """
+    Assign weight an orientation to hierarchy nodes in the directed graph (Hdag object).
+    :param h1: hierarchy
+    :param h2: hierarchy
+    :param weight: float
+    :param h1_cc: int, the cell count of the hierarchy
+    :param h2_cc: int, the cell count of the hierarchy
+    :param hdag: the Hdag object to add edges to
+    :return: None
+    """
     # IDs of the top patches for a hierarchy
     h1_id = h1.root_id
     h2_id = h2.root_id
@@ -262,73 +347,73 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, weights):
     return HDAG
 
 
-def partitions_to_labeled_grid(partitions, x, y):
-    labeled_grid = np.zeros(shape=(x,y), dtype=np.int64)
-    for partition in partitions:
-        partition_cells = []
-        partition_cells.append(partition.get_root_patch_cells())
-
-        for child in partition.children:
-            for patch in partition.get_child_nodes_by_id(child):
-                partition_cells.append(partition.get_child_cells(child, patch))
-
-        for cells in partition_cells:
-            for x, y in cells:
-                labeled_grid[x][y] = partition.id
-
-    return labeled_grid
-
-
-
-def adjust_partitions(patches_dict, labeled_partitions, hp_map):
-    """
-    Adjust the labeled grid so that there are no patches that belong to
-    multiple trees.  After creating the directed acyclic graph, the
-    graph is segmented at the hierarchy level, however not at the
-    patch level.  Contact patches belong to multiple hierarchies.  This
-    method assigns the patch to the closest hierarchy, making sure that a
-    patch can only belong to one tree. This is based on the height-adjusted
-    centroid of the hierarchy and the centroid of the contact patch.
-
-    :param patch_dict: Dictionary of Patch objects
-    :param labeled_partitions: NumPy array of integers
-    :param contact:
-    :param hp_map:
-    :return: NumPy array of integers which are the Tree IDs
-    """
-    adjusted_partitions = labeled_partitions.copy()
-
-    # for each contact patch, look for the closest hierarchy and assign it
-    for contact_patch_id, associated_hierarchies in patches_dict.items():
-        patch = patches_dict[contact_patch_id]
-
-        # List comprehension method
-        
-        ps = [p for p in all_patches if p.id == contact_patch_id-1]
-        # print(f"{ps=}")
-        patch = ps[0]
-        
-        patch_cells = patch.cells
-        centroid = patch.centroid
-
-        min_distance = np.inf
-        closest_hierarchy = None
-
-        # Get the centroids for each hierarchy that claims the contact patch
-        for hierarchy in associated_hierarchies:
-            centroid_distance = (distance.cdist(np.reshape(centroid, (-1, 2)),
-                                                np.reshape(hierarchy.height_adjusted_centroid, (-1, 2)),
-                                                'euclidean')[0][0])
-
-            # If the current hierarchy is closer, assign the patch to it
-            if centroid_distance < min_distance:
-                closest_hierarchy = hierarchy
-                min_distance = centroid_distance
-
-        # Finally adjust the partitions in the labeled grid
-        partition_to_adjust = hp_map[closest_hierarchy.root_id]
-
-        for i, j in patch_cells:
-            adjusted_partitions[i][j] = partition_to_adjust
-
-    return adjusted_partitions
+# def partitions_to_labeled_grid(partitions, x, y):
+#     labeled_grid = np.zeros(shape=(x,y), dtype=np.int64)
+#     for partition in partitions:
+#         partition_cells = []
+#         partition_cells.append(partition.get_root_patch_cells())
+#
+#         for child in partition.children:
+#             for patch in partition.get_child_nodes_by_id(child):
+#                 partition_cells.append(partition.get_child_cells(child, patch))
+#
+#         for cells in partition_cells:
+#             for x, y in cells:
+#                 labeled_grid[x][y] = partition.id
+#
+#     return labeled_grid
+#
+#
+#
+# def adjust_partitions(patches_dict, labeled_partitions, hp_map):
+#     """
+#     Adjust the labeled grid so that there are no patches that belong to
+#     multiple trees.  After creating the directed acyclic graph, the
+#     graph is segmented at the hierarchy level, however not at the
+#     patch level.  Contact patches belong to multiple hierarchies.  This
+#     method assigns the patch to the closest hierarchy, making sure that a
+#     patch can only belong to one tree. This is based on the height-adjusted
+#     centroid of the hierarchy and the centroid of the contact patch.
+#
+#     :param patch_dict: Dictionary of Patch objects
+#     :param labeled_partitions: NumPy array of integers
+#     :param contact:
+#     :param hp_map:
+#     :return: NumPy array of integers which are the Tree IDs
+#     """
+#     adjusted_partitions = labeled_partitions.copy()
+#
+#     # for each contact patch, look for the closest hierarchy and assign it
+#     for contact_patch_id, associated_hierarchies in patches_dict.items():
+#         patch = patches_dict[contact_patch_id]
+#
+#         # List comprehension method
+#
+#         ps = [p for p in all_patches if p.id == contact_patch_id-1]
+#         # print(f"{ps=}")
+#         patch = ps[0]
+#
+#         patch_cells = patch.cells
+#         centroid = patch.centroid
+#
+#         min_distance = np.inf
+#         closest_hierarchy = None
+#
+#         # Get the centroids for each hierarchy that claims the contact patch
+#         for hierarchy in associated_hierarchies:
+#             centroid_distance = (distance.cdist(np.reshape(centroid, (-1, 2)),
+#                                                 np.reshape(hierarchy.height_adjusted_centroid, (-1, 2)),
+#                                                 'euclidean')[0][0])
+#
+#             # If the current hierarchy is closer, assign the patch to it
+#             if centroid_distance < min_distance:
+#                 closest_hierarchy = hierarchy
+#                 min_distance = centroid_distance
+#
+#         # Finally adjust the partitions in the labeled grid
+#         partition_to_adjust = hp_map[closest_hierarchy.root_id]
+#
+#         for i, j in patch_cells:
+#             adjusted_partitions[i][j] = partition_to_adjust
+#
+#     return adjusted_partitions
