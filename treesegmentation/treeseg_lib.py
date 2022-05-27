@@ -7,6 +7,7 @@ from PIL import Image
 import pdal
 import json
 import time
+from scipy.ndimage import gaussian_filter
 import numpy as np
 
 from .hdag import *
@@ -147,6 +148,19 @@ def handle_las2img(points_xyz, bounds_xyz, range_xyz, scale_xyz, discretization,
         "grid": grid,
         "grid_size": grid_size,
         "cell_size": cell_size
+    }
+
+
+def handle_gaussian_filter(grid, gaussian, gaussian_sigma):
+    if not gaussian:
+        return
+
+    print("Pre filter:", grid)
+    grid = gaussian_filter(grid, sigma=gaussian_sigma)
+    print("Post filter:", grid)
+
+    return {
+        "grid": grid
     }
 
 

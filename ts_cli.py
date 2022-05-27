@@ -14,14 +14,16 @@ def main():
                         centroid_distance_weight], dtype=np.float32)
 
     user_data = {
-        "input_file_path": "sample_data/medium_nno.las",
+        "input_file_path": "sample_data/hard_nno.las",
         "weights": weights,
         "weight_threshold": 0.7,
         "resolution": 0.6,
         "discretization": 64,
         "min_height": 10,
         "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
-        "save_grid_raster": False,
+        "gaussian": False,
+        "gaussian_sigma": 0.1,
+        "save_grid_raster": True,
         "grid_raster_save_path": "grid_rasters",
         "save_patches_raster": True,
         "patches_raster_save_path": "patches_rasters",
@@ -38,6 +40,7 @@ def main():
     algorithm = Pipeline() \
         .then(handle_read_las_data) \
         .then(handle_las2img) \
+        .then(handle_gaussian_filter) \
         .then(handle_save_grid_raster) \
         .then(handle_compute_patches) \
         .then(handle_patches_to_dict) \
