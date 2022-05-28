@@ -1,3 +1,7 @@
+"""
+
+"""
+
 import json
 import sys
 
@@ -5,6 +9,8 @@ from treesegmentation.treeseg_lib import *
 
 
 def run_treesegmentation(initial_context):
+    """Default algorithm pipeline for tree segmentation."""
+
     algorithm = Pipeline(verbose=True) \
         .then(handle_create_file_names_and_paths) \
         .then(handle_read_las_data) \
