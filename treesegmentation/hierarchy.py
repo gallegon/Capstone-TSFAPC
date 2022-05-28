@@ -1,3 +1,6 @@
+"""Module for dealing with the Hierarchy data object.
+"""
+
 import numpy as np
 
 # For new node_depth implementation

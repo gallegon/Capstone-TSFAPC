@@ -1,4 +1,6 @@
-# hdag.py
+"""Module for dealing with the Hierarchy Directed Acyclic Graph (HDAG) data object.
+"""
+
 from scipy.spatial import distance
 from scipy.ndimage import gaussian_filter
 
