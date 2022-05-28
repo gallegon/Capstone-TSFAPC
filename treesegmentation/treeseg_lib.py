@@ -1,21 +1,18 @@
-import os.path
-import timeit
 import json
+import os.path
+import time
+import timeit
 from pathlib import Path
 
 import pdal
-from PIL import Image
-import pdal
-import json
-import time
 from scipy.ndimage import gaussian_filter
+from PIL import Image
 
 from .hdag import *
 from .hierarchy import *
 from .las2img import *
 from .patch import *
 from .tree import *
-from .laslabel import *
 
 
 class Pipeline:
@@ -288,17 +285,6 @@ def handle_trees_to_labeled_grid(trees, grid_size):
 
     return {
         "labeled_partitions": labeled_partitions
-    }
-
-
-def handle_label_points(labeled_partitions, points_xyz, point_count, min_xyz, cell_size, save_partition_raster=True):
-    if not save_partition_raster:
-        return
-
-    labeled_points = laslabel(labeled_partitions, points_xyz, point_count, min_xyz, cell_size)
-
-    return {
-        "labeled_points": labeled_points
     }
 
 
