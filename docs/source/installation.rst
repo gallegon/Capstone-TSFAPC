@@ -38,3 +38,22 @@ Alternatively the packages can be installed from pip with the follow commands:
     $ pip install scipy
     $ pip install gdal
     $ pip install pdal
+
+Building from source
+--------------------
+
+To build from source the treesegmentation package requires build
+which can be installed with pip:
+
+.. code-block:: console
+
+    $ pip install build
+
+Then run:
+
+.. code-block:: console
+
+    $ python -m build
+
+This will build a wheel that can be installed with pip in the
+/dist/ directory.
