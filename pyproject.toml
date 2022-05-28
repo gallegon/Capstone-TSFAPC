@@ -8,14 +8,12 @@ version = "0.0.1"
 description = "Tree Segmentation from aerial point clouds"
 readme = "README.md"
 keywords = ["tree segmentation", "Lidar", "point cloud"]
-license = {text = "MIT License"}
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
 
 dependencies = [
-    "laspy",
-    "numpy",
+    "numpy>=1.22.3",
     "scipy",
     "GDAL",
     "PDAL",

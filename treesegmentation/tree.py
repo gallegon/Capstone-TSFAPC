@@ -13,6 +13,7 @@ class Tree:
     def add_patch(self, patch):
         """
         Add a patch from the grid to a tree.
+
         :param patch: patch object
         :return: None
         """
@@ -23,6 +24,7 @@ def partition_graph(HDAG, weight_threshold, patches_dict):
     """
     Partition the graph based on a weight threshold.  Assign cells and patches to trees
     based on the HDAG partitioning.
+
     :param HDAG: Hdag object
     :param weight_threshold: float
     :param patches_dict: dictionary of patches
@@ -76,7 +78,8 @@ def partition_graph(HDAG, weight_threshold, patches_dict):
 
 def trees_to_labeled_grid(trees, x_size, y_size):
     """
-    From an array of tree objects, label the grid with their unique IDs.
+    From an array of tree objects, label a 2D grid with their unique IDs.
+
     :param trees: list of tree objects
     :param x_size: int
     :param y_size: int

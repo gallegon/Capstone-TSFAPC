@@ -12,6 +12,7 @@ class Hdag:
 
     def initialize_from_hierarchies(self, hierarchies):
         """
+        Initialize the HDAG from a list of hierarchies
 
         :param hierarchies: list of hierarchy objects
         :return: None
@@ -36,6 +37,7 @@ class Hdag:
     def remove_edge(self, parent_id, child_id):
         """
         Remove a directed edge from a parent graph node to child graph node.
+
         :param parent_id: int
         :param child_id: int
         :return: None
@@ -48,6 +50,7 @@ class Hdag:
     def get_hdag_node(self, node_id):
         """
         Return the node associated with node_id from the graph.
+
         :param node_id: int
         :return: None
         """
@@ -129,6 +132,7 @@ class HdagNode:
     def add_parent(self, parent):
         """
         Add a parent to a node.  Helper function for Hdag class add_edge procedure.
+
         :param parent: int
         :return:
         """
@@ -137,6 +141,7 @@ class HdagNode:
     def add_child(self, child):
         """
         Add a child to a node.  Help function for Hdag class add_edge procedure.
+
         :param child: int
         :return:
         """
@@ -145,6 +150,7 @@ class HdagNode:
     def remove_parent(self, parent_id):
         """
         Remove a parent from a node.  Helper function for Hdag class remove_edge procedure.
+
         :param parent_id: int
         :return:
         """
@@ -153,6 +159,7 @@ class HdagNode:
     def remove_child(self, child_id):
         """
         Remove a child from a node.  Helper function for Hdag class remove_edge procedure.
+
         :param child_id:
         :return:
         """
@@ -178,6 +185,7 @@ class HdagNode:
 def find_connected_hierarchies(patch_dict):
     """
     From a dictionary of all patches, find unique hierarchies that share patches.
+
     :param patch_dict: dictionary of patch objects
     :return: a list of tuples of connected hierarchies.
     """
@@ -238,6 +246,7 @@ def calculate_depth(h1, h2, shared_patches):
 def set_weight_and_orientation(h1, h2, weight, h1_cc, h2_cc, hdag):
     """
     Assign weight an orientation to hierarchy nodes in the directed graph (Hdag object).
+
     :param h1: hierarchy
     :param h2: hierarchy
     :param weight: float
@@ -302,6 +311,7 @@ def calculate_edge_weight(hierarchies, connected_hierarchies, weights):
     Compute statistics for a pair of connected hierarchies and calculate the
     edge weight from those statistics.  Give this weight to set_weight_and_orientation()
     to create a directed edge in the H-DAG.  Return
+
     :param hierarchies: List of Hierarchy objects
     :param connected_hierarchies: List of connected hierarchy pairs
     :param weights: The constants to apply to each statistic for the final weight computation
