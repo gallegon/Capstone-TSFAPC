@@ -9,7 +9,6 @@ treesegmentation
     patch
     hierarchy
     hdag
-    laslabel
     tree
 
 

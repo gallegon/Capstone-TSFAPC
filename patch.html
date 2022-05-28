@@ -4,12 +4,12 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
     <title>patch &#8212; Tree Segmentation 0.1 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
@@ -35,6 +35,106 @@
             
   <section id="module-treesegmentation.patch">
 <span id="patch"></span><h1>patch<a class="headerlink" href="#module-treesegmentation.patch" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="treesegmentation.patch.compute_patch_neighbors">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.patch.</span></span><span class="sig-name descname"><span class="pre">compute_patch_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeled_grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_patches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.patch.compute_patch_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the neighbors of a given labeled patch feature in the 2-D discretized
+grid. These neighbors will be used to build the directed Hierarchy graph in
+the hierarchy building step</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> – The discretized grid</p></li>
+<li><p><strong>labeled_grid</strong> – The grid labeled with patch features</p></li>
+<li><p><strong>all_patches</strong> – A list of all the Patch objects</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="treesegmentation.patch.compute_patches">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.patch.</span></span><span class="sig-name descname"><span class="pre">compute_patches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discretization</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbor_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.patch.compute_patches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute patches by height level in the discretized grid.  For every height
+level that we want to examine in the interval [min_height, discretization],
+find all the patches in that height level and add them to all_patches array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> – The discretized grid</p></li>
+<li><p><strong>discretization</strong> – The number of discrete intervals used to create grid</p></li>
+<li><p><strong>min_height</strong> – The minimum height level that we want to create patches for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Neighbor_mask</dt>
+<dd class="field-even"><p>The 3x3 adjacency matrix used to determine 4-way or 8-way adjacency.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>all_patches, a list of patches in the grid</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="treesegmentation.patch.create_labeled_grid">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.patch.</span></span><span class="sig-name descname"><span class="pre">create_labeled_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_patches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.patch.create_labeled_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Label the grid by unique Patch IDs.  This is used to create a Patch raster
+if specified by the user.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> – The discretized grid</p></li>
+<li><p><strong>all_patches</strong> – A list of all the Patch objects</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>labeled_grid, a grid labeled by unique Patch IDs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="treesegmentation.patch.find_patches_of_height">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.patch.</span></span><span class="sig-name descname"><span class="pre">find_patches_of_height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbor_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.patch.find_patches_of_height" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a given height level, find all features of that match that height level
+and create a patch for each unique feature.  This function is called by
+compute patches as a helper function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> – The discretized grid</p></li>
+<li><p><strong>height_level</strong> – The height level we are interested in finding patches for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Neighbor mask</dt>
+<dd class="field-even"><p>The 3x3 adjacency matrix used to determine 4-way or 8-way adjacency.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A list of Patch objects for a given height level (if any exist)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="treesegmentation.patch.patches_to_dict">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.patch.</span></span><span class="sig-name descname"><span class="pre">patches_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_patches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.patch.patches_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the all_patches array to a dictionary.  This is used in the
+weighted graph and partitioning steps for quick lookup of a Patch.
+The keys are the Patch ID and the values are the Patch objects
+associated with that ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>all_patches</strong> – The list of Patch object created by compute_patches</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>patch_dict, a dictionary of patches</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -54,8 +154,8 @@
 
 
 <h3>Navigation</h3>
-<p><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="treesegmentation.html">treesegmentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="treeseg_lib.html">treeseg_lib</a></li>
@@ -63,7 +163,6 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">patch</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hierarchy.html">hierarchy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hdag.html">hdag</a></li>
-<li class="toctree-l2"><a class="reference internal" href="laslabel.html">laslabel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tree.html">tree</a></li>
 </ul>
 </li>
@@ -84,7 +183,7 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -106,7 +205,7 @@
       &copy;2022, Nicholai Gallegos, Mark Gekelman, and Sam Foltz.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

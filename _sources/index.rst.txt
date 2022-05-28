@@ -3,6 +3,7 @@ Tree Segmentation Documentation
 
 .. toctree::
 
+    installation
     usage
     treesegmentation
 
