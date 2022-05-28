@@ -4,12 +4,12 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
     <title>hierarchy &#8212; Tree Segmentation 0.1 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
@@ -35,6 +35,43 @@
             
   <section id="module-treesegmentation.hierarchy">
 <span id="hierarchy"></span><h1>hierarchy<a class="headerlink" href="#module-treesegmentation.hierarchy" title="Permalink to this headline">¶</a></h1>
+<p>Module for dealing with the Hierarchy data object.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="treesegmentation.hierarchy.calculate_hac">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.hierarchy.</span></span><span class="sig-name descname"><span class="pre">calculate_hac</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.hierarchy.calculate_hac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the height-adjusted centroid for each hierarchy. Follows the
+procedure described by the tree segmentation algorithm.  This is used
+in the weighted graph creation to assign edge weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>h</strong> – Hierarchy to calculate height-adjusted centroid</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The HAC and cell count of the hierarchy</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="treesegmentation.hierarchy.compute_hierarchies">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.hierarchy.</span></span><span class="sig-name descname"><span class="pre">compute_hierarchies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_patches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.hierarchy.compute_hierarchies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the directed hierarchy graph from the Patch objects.  This sets up
+a directed graph based on a given Patch’s neighbors.  Does a traversal of
+each local maxima in the graph (parentless nodes) and sets up hierarchies
+as specified in the algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_patches</strong> – The list of Patch objects from previous step of the algorithm</p></li>
+<li><p><strong>patch_dict</strong> – The dictionary of Patch objects</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list of Hierarchy objects</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -54,8 +91,8 @@
 
 
 <h3>Navigation</h3>
-<p><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="treesegmentation.html">treesegmentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="treeseg_lib.html">treeseg_lib</a></li>
@@ -63,7 +100,6 @@
 <li class="toctree-l2"><a class="reference internal" href="patch.html">patch</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">hierarchy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hdag.html">hdag</a></li>
-<li class="toctree-l2"><a class="reference internal" href="laslabel.html">laslabel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tree.html">tree</a></li>
 </ul>
 </li>
@@ -84,7 +120,7 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -106,7 +142,7 @@
       &copy;2022, Nicholai Gallegos, Mark Gekelman, and Sam Foltz.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

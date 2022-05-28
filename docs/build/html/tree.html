@@ -4,18 +4,18 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
     <title>tree &#8212; Tree Segmentation 0.1 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="laslabel" href="laslabel.html" />
+    <link rel="prev" title="hdag" href="hdag.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -36,24 +36,40 @@
 <h1>tree<a class="headerlink" href="#tree" title="Permalink to this headline">¶</a></h1>
 <p>Bazinga!</p>
 <span class="target" id="module-treesegmentation.tree"></span><dl class="py function">
-<dt id="treesegmentation.tree.partition_graph">
-<code class="sig-prename descclassname"><span class="pre">treesegmentation.tree.</span></code><code class="sig-name descname"><span class="pre">partition_graph</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">HDAG</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patches_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.tree.partition_graph" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="treesegmentation.tree.partition_graph">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.tree.</span></span><span class="sig-name descname"><span class="pre">partition_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">HDAG</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patches_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.tree.partition_graph" title="Permalink to this definition">¶</a></dt>
 <dd><p>Partition the graph based on a weight threshold.  Assign cells and patches to trees
-based on the HDAG partitioning.
-:param HDAG: Hdag object
-:param weight_threshold: float
-:param patches_dict: dictionary of patches
-:return: array of tree objects</p>
+based on the HDAG partitioning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>HDAG</strong> – Hdag object</p></li>
+<li><p><strong>weight_threshold</strong> – float</p></li>
+<li><p><strong>patches_dict</strong> – dictionary of patches</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>array of tree objects</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="treesegmentation.tree.trees_to_labeled_grid">
-<code class="sig-prename descclassname"><span class="pre">treesegmentation.tree.</span></code><code class="sig-name descname"><span class="pre">trees_to_labeled_grid</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trees</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.tree.trees_to_labeled_grid" title="Permalink to this definition">¶</a></dt>
-<dd><p>From an array of tree objects, label the grid with their unique IDs.
-:param trees: list of tree objects
-:param x_size: int
-:param y_size: int
-:return: 2D grid of labeled trees.</p>
+<dt class="sig sig-object py" id="treesegmentation.tree.trees_to_labeled_grid">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.tree.</span></span><span class="sig-name descname"><span class="pre">trees_to_labeled_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trees</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.tree.trees_to_labeled_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>From an array of tree objects, label a 2D grid with their unique IDs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trees</strong> – list of tree objects</p></li>
+<li><p><strong>x_size</strong> – int</p></li>
+<li><p><strong>y_size</strong> – int</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>2D grid of labeled trees.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -76,6 +92,7 @@ based on the HDAG partitioning.
 
 <h3>Navigation</h3>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="treesegmentation.html">treesegmentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="treeseg_lib.html">treeseg_lib</a></li>
@@ -83,7 +100,6 @@ based on the HDAG partitioning.
 <li class="toctree-l2"><a class="reference internal" href="patch.html">patch</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hierarchy.html">hierarchy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hdag.html">hdag</a></li>
-<li class="toctree-l2"><a class="reference internal" href="laslabel.html">laslabel</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">tree</a></li>
 </ul>
 </li>
@@ -94,7 +110,7 @@ based on the HDAG partitioning.
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="treesegmentation.html">treesegmentation</a><ul>
-      <li>Previous: <a href="laslabel.html" title="previous chapter">laslabel</a></li>
+      <li>Previous: <a href="hdag.html" title="previous chapter">hdag</a></li>
   </ul></li>
   </ul></li>
 </ul>
@@ -103,7 +119,7 @@ based on the HDAG partitioning.
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -125,7 +141,7 @@ based on the HDAG partitioning.
       &copy;2022, Nicholai Gallegos, Mark Gekelman, and Sam Foltz.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
