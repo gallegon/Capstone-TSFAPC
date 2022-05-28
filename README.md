@@ -1,6 +1,8 @@
 # Capstone-TSFAPC
 CS461 OSU Capstone Tree Segmentation from Aerial Point Clouds
 
+GitHub repo: https://github.com/gallegon/Capstone-TSFAPC
+
 Created by Mark G, Nicholai G, and Samuel F.
 
 ## Installation and Usage
