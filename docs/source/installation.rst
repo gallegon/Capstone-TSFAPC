@@ -27,15 +27,14 @@ There is an included wheel file in the git repository.  From the directory that 
 wheel file use the command:
 
 .. code-block:: console
+
     $ pip install treesegmentation-0.0.1-py3-none-any.whl
 
 Alternatively the packages can be installed from pip with the follow commands:
 
 .. code-block:: console
+
     $ pip install numpy
-
     $ pip install scipy
-
     $ pip install gdal
-
     $ pip install pdal
