@@ -48,6 +48,13 @@ class Patch:
         return f"Patch<{self.height_level}, {len(self.cells)}, #{self.id}>"
 
     def add_hierarchy(self, hierarchy):
+        """
+        Add a hierarchy to a patch.  Determine if a candidate hierarchy is closest to
+        the patch centroid.  If it is, set that hierarchy as the nearest hierarchy.
+
+        :param hierarchy: The hierarchy to be examined
+        :return: None
+        """
         self.hierarchies.add(hierarchy)
         for hierarchy in self.hierarchies:
             centroid_distance = (distance.cdist(np.reshape(self.centroid, (-1, 2)),
@@ -61,6 +68,16 @@ class Patch:
 
 
 def compute_patch_neighbors(grid, labeled_grid, all_patches):
+    """
+    Determine the neighbors of a given labeled patch feature in the 2-D discretized
+    grid. These neighbors will be used to build the directed Hierarchy graph in
+    the hierarchy building step
+
+    :param grid: The discretized grid
+    :param labeled_grid: The grid labeled with patch features
+    :param all_patches: A list of all the Patch objects
+    :return: None
+    """
     offsets = [(1, 0), (-1, 0), (0, 1), (0, -1)]
     grid_width, grid_height = grid.shape
     for patch in all_patches:
@@ -79,6 +96,17 @@ def compute_patch_neighbors(grid, labeled_grid, all_patches):
     
 
 def compute_patches(grid, discretization, min_height, neighbor_mask=None):
+    """
+    Compute patches by height level in the discretized grid.  For every height
+    level that we want to examine in the interval [min_height, discretization],
+    find all the patches in that height level and add them to all_patches array.
+
+    :param grid: The discretized grid
+    :param discretization: The number of discrete intervals used to create grid
+    :param min_height: The minimum height level that we want to create patches for
+    :neighbor_mask: The 3x3 adjacency matrix used to determine 4-way or 8-way adjacency.
+    :return: all_patches, a list of patches in the grid
+    """
     all_patches = []
     for height_level in range(min_height, discretization + 1):
         patches_of_height = find_patches_of_height(grid, height_level, neighbor_mask)
@@ -87,6 +115,16 @@ def compute_patches(grid, discretization, min_height, neighbor_mask=None):
 
 
 def find_patches_of_height(grid, height_level, neighbor_mask=None):
+    """
+    For a given height level, find all features of that match that height level
+    and create a patch for each unique feature.  This function is called by
+    compute patches as a helper function.
+
+    :param grid: The discretized grid
+    :param height_level: The height level we are interested in finding patches for
+    :neighbor mask: The 3x3 adjacency matrix used to determine 4-way or 8-way adjacency.
+    :return: A list of Patch objects for a given height level (if any exist)
+    """
     neighbor_mask = NEIGHBOR_MASK_FOUR_WAY if neighbor_mask is None else neighbor_mask
     # Create a 2d boolean array of cells (a mask).
     # Cells with height == height_level are True, otherwise False.
@@ -112,6 +150,15 @@ def find_patches_of_height(grid, height_level, neighbor_mask=None):
 
 # Convert the patch list to a dictionary
 def patches_to_dict(all_patches):
+    """
+    Converts the all_patches array to a dictionary.  This is used in the
+    weighted graph and partitioning steps for quick lookup of a Patch.
+    The keys are the Patch ID and the values are the Patch objects
+    associated with that ID.
+
+    :param all_patches: The list of Patch object created by compute_patches
+    :return: patch_dict, a dictionary of patches
+    """
     patch_dict = {}
 
     # Map the patch ID the relevant patch
@@ -122,6 +169,14 @@ def patches_to_dict(all_patches):
 
 
 def create_labeled_grid(grid, all_patches):
+    """
+    Label the grid by unique Patch IDs.  This is used to create a Patch raster
+    if specified by the user.
+
+    :param grid: The discretized grid
+    :param all_patches: A list of all the Patch objects
+    :return: labeled_grid, a grid labeled by unique Patch IDs
+    """
     labeled_grid = np.zeros(grid.shape, dtype="int")
     for patch in all_patches:
         x, y = patch.cells.T

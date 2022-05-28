@@ -55,6 +55,16 @@ class Hierarchy:
 
 
 def compute_hierarchies(all_patches, patch_dict):
+    """
+    Compute the directed hierarchy graph from the Patch objects.  This sets up
+    a directed graph based on a given Patch's neighbors.  Does a traversal of
+    each local maxima in the graph (parentless nodes) and sets up hierarchies
+    as specified in the algorithm.
+
+    :param all_patches: The list of Patch objects from previous step of the algorithm
+    :param patch_dict: The dictionary of Patch objects
+    :return: a list of Hierarchy objects
+    """
     # Basic pipeline of what's happening:
     # - Transform every Patch into a HierarchyNode.
     # - Find the roots (nodes with no parents).
@@ -116,6 +126,7 @@ def compute_hierarchies(all_patches, patch_dict):
         hierarchy.height_adjusted_centroid = hac
         hierarchy.cell_count = cell_count
 
+        # Try to add the hierarchy to an associated patch
         for node in reachable_nodes_by_id:
             patch = patch_dict[node]
             patch.add_hierarchy(hierarchy)
@@ -128,8 +139,15 @@ def compute_hierarchies(all_patches, patch_dict):
     return hierarchies
 
 
-# Compute the height adjusted centroid for each heirarchy
 def calculate_hac(h):
+    """
+    Computes the height-adjusted centroid for each hierarchy. Follows the
+    procedure described by the tree segmentation algorithm.  This is used
+    in the weighted graph creation to assign edge weights.
+
+    :param h: Hierarchy to calculate height-adjusted centroid
+    :return: The HAC and cell count of the hierarchy
+    """
     # "Running total" for cell count, weighted centroids
     hierarchy_cell_count = 0
 
