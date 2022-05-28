@@ -21,7 +21,7 @@ NEIGHBOR_MASK_EIGHT_WAY = [
 class Patch:
     ID = 1
     
-    def __init__(self, height_level, centroid, cells=[]):
+    def __init__(self, height_level, centroid, cells=None):
         self.height_level = height_level
         self.cell_count = len(cells)
         self.cells = [] if cells is None else cells

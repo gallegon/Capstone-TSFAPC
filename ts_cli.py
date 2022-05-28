@@ -23,7 +23,6 @@ def run_treesegmentation(initial_context):
         .then(handle_partition_graph) \
         .then(handle_trees_to_labeled_grid) \
         .then(handle_save_partition_raster) \
-        .then(handle_label_points) \
         .then(handle_label_point_cloud) \
         .then(handle_save_context_file)
 

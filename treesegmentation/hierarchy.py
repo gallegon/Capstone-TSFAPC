@@ -128,16 +128,6 @@ def compute_hierarchies(all_patches, patch_dict):
     return hierarchies
 
 
-def hierarchy_as_raster(labeled_grid, hierarchy):
-    hierarchy_grid = np.full(labeled_grid.shape, 255)
-    for node in hierarchy.nodes_by_id.values():
-        for x, y in node.patch.cells:
-            patch_id = labeled_grid[x, y]
-            patch_height = hierarchy.nodes_by_id[patch_id].patch.height_level
-            hierarchy_grid[x, y] = 255 * (1 - patch_height / hierarchy.height)
-    return hierarchy_grid
-
-
 # Compute the height adjusted centroid for each heirarchy
 def calculate_hac(h):
     # "Running total" for cell count, weighted centroids
@@ -164,19 +154,3 @@ def calculate_hac(h):
 
     height_adjusted_centroid = hac_numerator / hac_denominator
     return height_adjusted_centroid, hierarchy_cell_count
-
-
-def remove_non_contact_patches(contact_patches):
-    # List of patches to remove from contact_patches
-    to_remove = []
-
-    # check if each patch is associated with more than one hierarchy, if the
-    # patch only has one hierarchy, remove it from the dictionary of contact patches
-    for patch_id, patch_list in contact_patches.items():
-        p = list(patch_list)
-        if len(p) <= 1:
-            # remove the non-contact patch item
-            to_remove.append(patch_id)
-
-    for patch_id in to_remove:
-        contact_patches.pop(patch_id)
