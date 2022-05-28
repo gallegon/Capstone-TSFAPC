@@ -366,11 +366,14 @@ def handle_label_point_cloud(input_file_path, input_file_name, output_folder_pat
     las_output_path = os.path.join(output_folder_path, las_output_name)
 
     # spawn gdal_translate program to translate png to GeoTiff
-    translate_command = f"gdal_translate -of GTiff -a_srs {espg_string} -a_ullr {min_x} {min_y} {max_x} {max_y} {png_raster_path} {gtiff_output_path}"
+    translate_command = f'gdal_translate -of GTiff -a_srs {espg_string} -a_ullr {min_x} {min_y} {max_x} {max_y} "{png_raster_path}" "{gtiff_output_path}"'
+    print("+++++++++++++++")
+    print(translate_command)
+    print("+++++++++++++++")
     os.system(translate_command)
 
     # run gdal_edit to reproject into a different CRS
-    edit_command = f"gdal_edit -a_srs {espg_string} {gtiff_output_path}"
+    edit_command = f'gdal_edit -a_srs {espg_string} "{gtiff_output_path}"'
     os.system(edit_command)
 
     print(f"    -- Saved GeoTIFF to {gtiff_output_path}")
