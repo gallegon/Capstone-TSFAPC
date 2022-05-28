@@ -38,25 +38,79 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="treesegmentation.treeseg_lib.Pipeline">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">treesegmentation.treeseg_lib.</span></span><span class="sig-name descname"><span class="pre">Pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.treeseg_lib.Pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Controls the order and handling of multiple stages of a process.
-Build a pipeline by constructing a Pipeline and using the .then method
-to add stages.
-Use the .execute method to pass an initial input and begin running the
+<dd><p>Controls the order and handling of multiple stages of a process.</p>
+<p>Build a pipeline by constructing a Pipeline and using the <code class="docutils literal notranslate"><span class="pre">.then</span></code> method
+to add stages.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">.execute</span></code> method to pass an initial input and begin running the
 first stage. Each stage is executed sequentially, passing output from
-the previous stage as input to the next stage.
-Either every stage completes successfully, or somewhere along the line
-an error occurs. Therefore the .execute method returns either a
+the previous stage as input to the next stage.</p>
+<p>Either every stage completes successfully, or somewhere along the line
+an error occurs. The <code class="docutils literal notranslate"><span class="pre">.execute</span></code> method returns either a
 successful result or an error.</p>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="treesegmentation.treeseg_lib.Pipeline.execute">
 <span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.treeseg_lib.Pipeline.execute" title="Permalink to this definition">¶</a></dt>
-<dd><p>For each handler, run them in order passing the context object to each handler.
-The handlers can update the context by returning a dict of key/value pairs for which
-to update the context object with.
-The required parameters for each handler are determined from the function parameters,
-and the appropriate parameters are passed from the context object to the handler.</p>
+<dd><p>Run each handler in order passing the context object to each handler.</p>
+<p>The required parameters for each handler are determined from the function definition,
+and the appropriate parameters are passed from the context object to the handler upon execution.</p>
+<p>Handler functions can update the context by returning a dict of key/value pairs for which
+to update the context object with. Although this is not required.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>initial</strong> – The initial context dictionary to be updated after each stage in the pipeline.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The resulting context dictionary (string names to values).</p>
+</dd>
+</dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="treesegmentation.treeseg_lib.Pipeline.intersperse">
+<span class="sig-name descname"><span class="pre">intersperse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.treeseg_lib.Pipeline.intersperse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call the <code class="docutils literal notranslate"><span class="pre">wrapper</span></code> function on each stage of the pipeline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>wrapper</strong> – Decorator like function to be applied to each handler function before execution.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns this pipeline. Allows <code class="docutils literal notranslate"><span class="pre">.intersperse</span></code> calls to be chained.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="treesegmentation.treeseg_lib.Pipeline.then">
+<span class="sig-name descname"><span class="pre">then</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">handler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.treeseg_lib.Pipeline.then" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the next sequential stage in this pipeline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>handler</strong> – Handler function to be executed.
+See <code class="docutils literal notranslate"><span class="pre">Pipeline.execute</span></code> for specification of handler functions.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns this pipeline. Allows <code class="docutils literal notranslate"><span class="pre">.then</span></code> calls to be chained.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="treesegmentation.treeseg_lib.transform_print_runtime">
+<span class="sig-prename descclassname"><span class="pre">treesegmentation.treeseg_lib.</span></span><span class="sig-name descname"><span class="pre">transform_print_runtime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.treeseg_lib.transform_print_runtime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper/decorator which prints the runtime of the funtion when called.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>f</strong> – Function to print the execution time of.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Decorator applied to the given function.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>

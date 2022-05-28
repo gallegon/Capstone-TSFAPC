@@ -10,7 +10,7 @@ def las2img(points_xyz, bounds_xyz, grid_size, cell_size, discretization):
     :param cell_size: Tuple of the width and height of each cell (in units of meters per pixel).
     :param discretization: Number of "slices" or z-levels to encode in the image. Should be a power of 2.
 
-    :return: A 2D array containing the highest z value for every point in each cell.
+    :return: A 2D array containing the highest z value of every point in each cell.
     """
 
     point_count = points_xyz.shape[1]

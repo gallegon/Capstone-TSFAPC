@@ -17,14 +17,18 @@ from .tree import *
 
 class Pipeline:
     """ Controls the order and handling of multiple stages of a process.
-    Build a pipeline by constructing a Pipeline and using the .then method
+
+    Build a pipeline by constructing a Pipeline and using the ``.then`` method
     to add stages.
-    Use the .execute method to pass an initial input and begin running the
-    first stage. Each stage is executed sequentially, passing output from
-    the previous stage as input to the next stage.
-    Either every stage completes successfully, or somewhere along the line
-    an error occurs. Therefore the .execute method returns either a
-    successful result or an error.
+
+    Note:
+        Use the ``.execute`` method to pass an initial input and begin running the
+        first stage. Each stage is executed sequentially, passing output from
+        the previous stage as input to the next stage.
+
+        Either every stage completes successfully, or somewhere along the line
+        an error occurs. The ``.execute`` method returns either a
+        successful result or an error.
     """
 
     def __init__(self, verbose=False):
@@ -33,23 +37,46 @@ class Pipeline:
         self.verbose = True if verbose else False
 
     def then(self, handler):
+        """Adds the next sequential stage in this pipeline.
+
+        :param handler: Handler function to be executed.
+            See ``Pipeline.execute`` for specification of handler functions.
+
+        :return: Returns this pipeline. Allows ``.then`` calls to be chained.
+        """
         self.handlers.append(handler)
         return self
 
     def intersperse(self, wrapper):
+        """Call the ``wrapper`` function on each stage of the pipeline.
+
+        :param wrapper: Decorator like function to be applied to each handler function before execution.
+
+        :return: Returns this pipeline. Allows ``.intersperse`` calls to be chained.
+        """
         self.transformers.append(wrapper)
         return self
 
     def execute(self, initial):
-        """ For each handler, run them in order passing the context object to each handler.
-        The handlers can update the context by returning a dict of key/value pairs for which
-        to update the context object with.
-        The required parameters for each handler are determined from the function parameters,
-        and the appropriate parameters are passed from the context object to the handler.
+        """ Run each handler in order passing the context object to each handler.
+
+        The required parameters for each handler are determined from the function definition,
+        and the appropriate parameters are passed from the context object to the handler upon execution.
+
+        Handler functions can update the context by returning a dict of key/value pairs for which
+        to update the context object with. Although this is not required.
+
+        :param initial: The initial context dictionary to be updated after each stage in the pipeline.
+
+        :return: The resulting context dictionary (string names to values).
         """
+
         def identity(f, *args, **kwargs):
             return f(*args, **kwargs)
 
+        # Construct the transformer to apply to each handler function.
+        # Start with the identity transformer so the last application can be on
+        # the handler function itself, beginning the execution.
         transformer = identity
         for t in self.transformers:
             transformer = t(transformer)
@@ -107,6 +134,13 @@ class Pipeline:
 
 
 def transform_print_runtime(f):
+    """Wrapper/decorator which prints the runtime of the funtion when called.
+
+    :param f: Function to print the execution time of.
+
+    :return: Decorator applied to the given function.
+    """
+
     def wrapper(*args, **kwargs):
         start = timeit.default_timer()
         result = f(*args, **kwargs)
@@ -114,6 +148,11 @@ def transform_print_runtime(f):
         print(f"    - Finished in {elapsed:.2f} seconds")
         return result
     return wrapper
+
+
+# ============================================================================
+# = All of the following function definitions are handlers for the Pipeline. =
+# ============================================================================
 
 
 def handle_read_las_data(input_file_path):
