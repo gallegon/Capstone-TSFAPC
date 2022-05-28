@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>treeseg_lib &#8212; Tree Segmentation 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="las2img" href="las2img.html" />
+    <link rel="prev" title="treesegmentation" href="treesegmentation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-treesegmentation.treeseg_lib">
+<span id="treeseg-lib"></span><h1>treeseg_lib<a class="headerlink" href="#module-treesegmentation.treeseg_lib" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="treesegmentation.treeseg_lib.Pipeline">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">treesegmentation.treeseg_lib.</span></code><code class="sig-name descname"><span class="pre">Pipeline</span></code><a class="headerlink" href="#treesegmentation.treeseg_lib.Pipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Controls the order and handling of multiple stages of a process.
+Build a pipeline by constructing a Pipeline and using the .then method
+to add stages.
+Use the .execute method to pass an initial input and begin running the
+first stage. Each stage is executed sequentially, passing output from
+the previous stage as input to the next stage.
+Either every stage completes successfully, or somewhere along the line
+an error occurs. Therefore the .execute method returns either a
+successful result or an error.</p>
+<dl class="py method">
+<dt id="treesegmentation.treeseg_lib.Pipeline.execute">
+<code class="sig-name descname"><span class="pre">execute</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#treesegmentation.treeseg_lib.Pipeline.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each handler, run them in order passing the context object to each handler.
+The handlers can update the context by returning a dict of key/value pairs for which
+to update the context object with.
+The required parameters for each handler are determined from the function parameters,
+and the appropriate parameters are passed from the context object to the handler.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Tree Segmentation</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="treesegmentation.html">treesegmentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">treeseg_lib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="las2img.html">las2img</a></li>
+<li class="toctree-l2"><a class="reference internal" href="patch.html">patch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hierarchy.html">hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hdag.html">hdag</a></li>
+<li class="toctree-l2"><a class="reference internal" href="laslabel.html">laslabel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tree.html">tree</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="treesegmentation.html">treesegmentation</a><ul>
+      <li>Previous: <a href="treesegmentation.html" title="previous chapter">treesegmentation</a></li>
+      <li>Next: <a href="las2img.html" title="next chapter">las2img</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Nicholai Gallegos, Mark Gekelman, and Sam Foltz.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/treeseg_lib.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

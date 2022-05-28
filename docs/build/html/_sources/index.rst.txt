@@ -1,0 +1,15 @@
+Tree Segmentation Documentation
+===============================
+
+.. toctree::
+
+    usage
+    treesegmentation
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

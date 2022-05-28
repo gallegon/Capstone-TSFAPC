@@ -10,14 +10,26 @@ class Tree:
         self.hierarchies = hierarchies
         self.patches = {}
 
-    def get_hierarchies(self):
-        return self.partition.children
-
     def add_patch(self, patch):
+        """
+        Add a patch from the grid to a tree.
+
+        :param patch: patch object
+        :return: None
+        """
         self.patches[patch.id] = patch
 
 
 def partition_graph(HDAG, weight_threshold, patches_dict):
+    """
+    Partition the graph based on a weight threshold.  Assign cells and patches to trees
+    based on the HDAG partitioning.
+
+    :param HDAG: Hdag object
+    :param weight_threshold: float
+    :param patches_dict: dictionary of patches
+    :return: array of tree objects
+    """
     trees = {}
 
     # map of hierarchies to partitions
@@ -25,13 +37,14 @@ def partition_graph(HDAG, weight_threshold, patches_dict):
 
     hierarchy_tree_map = {}
 
+    # Partition the HDAG
     HDAG.remove_non_maximal_inbound_edges()
     HDAG.partition_by_weight_threshold(weight_threshold)
     hdag_nodes = HDAG.nodes.copy()
+
     # get parentless source nodes, these are the trees
     sources = HDAG.get_source_nodes()
 
-    # TODO: See about making this a method for Partition class
     # get the reachable hierarchies from each source and add it to the source
     for source in sources:
         hierarchies = {}
@@ -64,6 +77,14 @@ def partition_graph(HDAG, weight_threshold, patches_dict):
 
 
 def trees_to_labeled_grid(trees, x_size, y_size):
+    """
+    From an array of tree objects, label a 2D grid with their unique IDs.
+
+    :param trees: list of tree objects
+    :param x_size: int
+    :param y_size: int
+    :return: 2D grid of labeled trees.
+    """
     # Create a grid to label
     labeled_tree_grid = np.zeros(shape=(x_size, y_size), dtype=np.int64)
 

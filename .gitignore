@@ -19,3 +19,7 @@ sample_data/306_las.las
 tree_rasters/
 tree_rasters/*
 *.old
+treesegmentation_output/
+treesegmentation_output/*
+labeled_point_clouds/
+labeled_point_clouds/*

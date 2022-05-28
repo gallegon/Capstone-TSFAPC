@@ -1,13 +1,14 @@
 import os.path
 import timeit
 import json
+from pathlib import Path
 
 import pdal
 from PIL import Image
 import pdal
 import json
 import time
-import numpy as np
+from scipy.ndimage import gaussian_filter
 
 from .hdag import *
 from .hierarchy import *
@@ -29,9 +30,10 @@ class Pipeline:
     successful result or an error.
     """
 
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.handlers = []
         self.transformers = []
+        self.verbose = True if verbose else False
 
     def then(self, handler):
         self.handlers.append(handler)
@@ -60,22 +62,35 @@ class Pipeline:
         #   - Acquire parameters from context
         #   - Execute handler with parameters
         #   - Update context with handler results
+        start_time = time.time()
         for stage, handler in enumerate(self.handlers):
             handler_params = handler.__code__.co_varnames[:handler.__code__.co_argcount]
-            # context.get(param) defaults to None if no value is present in context.
+            default_values = tuple() if handler.__defaults__ is None else handler.__defaults__
+            default_params = dict(zip(handler_params[-len(default_values):], default_values))
+
             acquired_params = dict()
             for param in handler_params:
-                value = context.get(param)
-                if value is None:
-                    # Currently passing None if param is not found in context.
+                if param in context:
+                    acquired_params[param] = context[param]
+                elif param in default_params:
+                    acquired_params[param] = default_params[param]
+                elif param == "_context":
+                    acquired_params[param] = context
+                else:
+                    # Requested parameter is not in context, not defaulted, and not a special parameter.
+                    # Currently, passing None if param is neither defaulted not found in context.
                     # Could throw, stop, or add a way to implement custom behavior here.
-                    print(f"Could not find {param} in pipeline context!")
-                acquired_params[param] = value
+                    print(f"Could not find '{param}' in pipeline context!")
+                    acquired_params[param] = None
 
-            print(f"Executing stage [{stage}]:  {handler.__name__}({', '.join([str(param) for param in handler_params])})")
+            if self.verbose:
+                param_list = map(lambda p: str(p) if p not in default_params else f"{p}={default_params[p]}", handler_params)
+                print(f"Executing stage [{stage}]: {handler.__name__}({', '.join(param_list)})")
+            else:
+                print(f"Executing stage [{stage}]: {handler.__name__}")
+
             try:
-                # Run the next handler with the appropriate parameters
-                # and apply any transforms.
+                # Run the next handler with the appropriate parameters and apply any transforms.
                 result = transformer(handler, **acquired_params)
                 # Update the context object with the key/value pairs from result.
                 if isinstance(result, dict):
@@ -85,7 +100,23 @@ class Pipeline:
                 print(f"Pipeline handler [{stage}] {handler.__name__} failed with exception.")
                 raise e
 
+            if self.verbose:
+                print()
+
+        elapsed_time = time.time() - start_time
+
+        print(f"Pipeline completed {len(self.handlers)} stages in {elapsed_time} seconds.")
         return context
+
+
+def transform_print_runtime(f):
+    def wrapper(*args, **kwargs):
+        start = timeit.default_timer()
+        result = f(*args, **kwargs)
+        elapsed = timeit.default_timer() - start
+        print(f"    - Finished in {elapsed:.2f} seconds")
+        return result
+    return wrapper
 
 
 def handle_read_las_data(input_file_path):
@@ -138,6 +169,20 @@ def handle_read_las_data(input_file_path):
     }
 
 
+def handle_create_file_names_and_paths(input_file_path, output_folder_name=None, save_folder_name=None):
+    output_folder_name = "treesegmentation_output" if output_folder_name is None else output_folder_name
+    input_file_name = ".".join(os.path.split(input_file_path)[1].split(".")[:-1])
+    save_folder_name = input_file_name + "_" + hex(hash(time.time()))[2:] if save_folder_name is None else save_folder_name
+    output_folder_path = os.path.join(os.getcwd(), output_folder_name, save_folder_name)
+
+    Path(output_folder_path).mkdir(parents=True, exist_ok=True)
+
+    return {
+        "output_folder_path": output_folder_path,
+        "input_file_name": input_file_name
+    }
+
+
 def handle_las2img(points_xyz, bounds_xyz, range_xyz, scale_xyz, discretization, resolution):
     grid_size = np.ceil(range_xyz[:2] / resolution).astype("int")
     cell_size = np.ceil(resolution / scale_xyz[:2]).astype("int")
@@ -150,9 +195,27 @@ def handle_las2img(points_xyz, bounds_xyz, range_xyz, scale_xyz, discretization,
     }
 
 
-def handle_compute_patches(grid, discretization, min_height, neighbor_mask):
+def handle_gaussian_filter(grid, gaussian_sigma=None):
+    if gaussian_sigma is None:
+        return
+
+    grid = gaussian_filter(grid, sigma=gaussian_sigma)
+
+    return {
+        "grid": grid
+    }
+
+
+def handle_grid_height_cutoff(grid, min_height):
+    grid[grid < min_height] = 0
+
+    return {
+        "grid": grid
+    }
+
+
+def handle_compute_patches(grid, discretization, min_height, neighbor_mask=None):
     all_patches = compute_patches(grid, discretization, min_height, neighbor_mask)
-    # labeled_grid = gaussian_filter(labeled_grid, sigma=0.4)
 
     return {
         "all_patches": all_patches
@@ -193,7 +256,16 @@ def handle_find_connected_hierarchies(patches_dict):
     }
 
 
-def handle_calculate_edge_weight(hierarchies, connected_hierarchies, weights):
+def handle_calculate_edge_weight(hierarchies, connected_hierarchies, weight_level_depth,
+                                 weight_node_depth, weight_shared_ratio,
+                                 weight_top_distance, weight_centroid_distance):
+    weights = np.array([
+        weight_level_depth,
+        weight_node_depth,
+        weight_shared_ratio,
+        weight_top_distance,
+        weight_centroid_distance
+    ], dtype=np.float32)
     hdag = calculate_edge_weight(hierarchies, connected_hierarchies, weights)
 
 
@@ -219,24 +291,10 @@ def handle_trees_to_labeled_grid(trees, grid_size):
     }
 
 
-def handle_partitions_to_labeled_grid(partitioned_graph, grid_size):
-    labeled_partitions = partitions_to_labeled_grid(partitioned_graph, grid_size[0], grid_size[1])
-    # labeled_partitions = gaussian_filter(labeled_partitions, sigma=1)
+def handle_label_points(labeled_partitions, points_xyz, point_count, min_xyz, cell_size, save_partition_raster=True):
+    if not save_partition_raster:
+        return
 
-    return {
-        "labeled_partitions": labeled_partitions
-    }
-
-
-def handle_adjust_partitions(patches_dict, labeled_partitions, hp_map):
-    labeled_partitions = adjust_partitions(patches_dict, labeled_partitions, hp_map)
-
-    return {
-        "labeled_partitions": labeled_partitions
-    }
-
-
-def handle_label_points(labeled_partitions, points_xyz, point_count, min_xyz, cell_size):
     labeled_points = laslabel(labeled_partitions, points_xyz, point_count, min_xyz, cell_size)
 
     return {
@@ -244,38 +302,7 @@ def handle_label_points(labeled_partitions, points_xyz, point_count, min_xyz, ce
     }
 
 
-def handle_save_tree_raster(save_tree_raster, tree_raster_save_path, partitioned_graph, labeled_partitions, grid, input_file_path, resolution, discretization):
-    if not save_tree_raster:
-        return
-
-    for index, partition in enumerate(partitioned_graph):
-        id = partition.id
-        if id == 0:
-            continue
-
-        col, row = np.indices((labeled_partitions.shape[1], labeled_partitions.shape[0]))
-        mask = labeled_partitions[row, col] == id
-
-        channel = ((1 - grid / discretization) * 255).transpose().astype("uint8")
-        r = (channel % 256).astype("uint8")
-        g = (channel % 256).astype("uint8")
-        b = (channel % 256).astype("uint8")
-
-        r[mask] = 255
-
-        image_color = np.dstack((r, g, b))
-        img = Image.fromarray(image_color, "RGB")
-
-        os.makedirs(tree_raster_save_path, exist_ok=True)
-        file_name = os.path.split(input_file_path)[1]
-        save_name = f"T{id}_{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
-        full_path = os.path.join(tree_raster_save_path, save_name)
-        img.save(full_path)
-
-    print(f"    - Saved tree rasters to \"{tree_raster_save_path}\"")
-
-
-def handle_save_partition_raster(save_partition_raster, partition_raster_save_path, discretization, grid, labeled_partitions, input_file_path, resolution):
+def handle_save_partition_raster(input_file_name, output_folder_path, labeled_partitions, save_partition_raster=True):
     if not save_partition_raster:
         return
 
@@ -286,20 +313,18 @@ def handle_save_partition_raster(save_partition_raster, partition_raster_save_pa
     image_color = np.dstack((r, g, b))
     img = Image.fromarray(image_color, "RGB")
 
-    os.makedirs(partition_raster_save_path, exist_ok=True)
-    file_name = os.path.split(input_file_path)[1]
-    save_name = f"{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
-    full_path = os.path.join(partition_raster_save_path, save_name)
-    img.save(full_path)
+    save_name = f"{input_file_name}_partitions.png"
+    save_path = os.path.join(output_folder_path, save_name)
+    img.save(save_path)
 
-    print(f"    - Saved partition raster to \"{full_path}\"")
+    print(f"    - Saved partition raster to \"{save_path}\"")
 
     return {
-        "png_raster_path": full_path
+        "png_raster_path": save_path
     }
 
 
-def handle_save_patches_raster(save_patches_raster, patches_raster_save_path, labeled_grid, input_file_path, resolution, discretization):
+def handle_save_patches_raster(input_file_name, output_folder_path, labeled_grid, save_patches_raster=False):
     if not save_patches_raster:
         return
 
@@ -310,61 +335,31 @@ def handle_save_patches_raster(save_patches_raster, patches_raster_save_path, la
     image_color = np.dstack((r, g, b))
     img = Image.fromarray(image_color, "RGB")
 
-    os.makedirs(patches_raster_save_path, exist_ok=True)
-    file_name = os.path.split(input_file_path)[1]
-    save_name = f"{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
-    full_path = os.path.join(patches_raster_save_path, save_name)
-    img.save(full_path)
+    save_name = f"{input_file_name}_patches.png"
+    save_path = os.path.join(output_folder_path, save_name)
+    img.save(save_path)
 
-    print(f"    - Saved patches raster to \"{full_path}\"")
+    print(f"    - Saved patches raster to \"{save_path}\"")
 
 
-def handle_save_grid_raster(save_grid_raster, grid_raster_save_path, grid, input_file_path, resolution, discretization):
+def handle_save_grid_raster(input_file_name, output_folder_path, grid, discretization, save_grid_raster=False):
     if not save_grid_raster:
         return
 
     image_gray = ((1 - grid / discretization) * 255).transpose().astype("uint8")
     img = Image.fromarray(image_gray)
 
-    os.makedirs(grid_raster_save_path, exist_ok=True)
-    file_name = os.path.split(input_file_path)[1]
-    save_name = f"{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
-    full_path = os.path.join(grid_raster_save_path, save_name)
-    img.save(full_path)
+    save_name = f"{input_file_name}_grid.png"
+    save_path = os.path.join(output_folder_path, save_name)
+    img.save(save_path)
 
-    print(f"    - Saved grid raster to \"{full_path}\"")
+    print(f"    - Saved grid raster to \"{save_path}\"")
 
 
-def handle_save_centroids_raster(save_centroids_raster, centroids_raster_save_path, hierarchies, grid, input_file_path, resolution, discretization):
-    if not save_centroids_raster:
+def handle_label_point_cloud(input_file_path, input_file_name, output_folder_path, png_raster_path, bounds_xyz, scale_xyz, espg_string):
+    if not png_raster_path:
         return
 
-    image_gray = ((1 - grid / discretization) * 255).transpose().astype("uint8")
-    r = image_gray
-    g = image_gray
-    b = image_gray
-
-    root_patches = [h.root.patch for h in hierarchies]
-    centroids = [p.centroid for p in root_patches]
-    for y, x in centroids:
-        x, y = int(x), int(y)
-        r[x, y] = 255
-        g[x, y] = 255
-        b[x, y] = 0
-
-    image_color = np.dstack((r, g, b))
-    img = Image.fromarray(image_color, "RGB")
-
-    os.makedirs(centroids_raster_save_path, exist_ok=True)
-    file_name = os.path.split(input_file_path)[1]
-    save_name = f"{file_name}_{resolution}-{discretization}-{img.width}x{img.height}.png"
-    full_path = os.path.join(centroids_raster_save_path, save_name)
-    img.save(full_path)
-
-    print(f"    - Saved centroids raster to \"{full_path}\"")
-
-
-def handle_label_point_cloud(input_file_path, bounds_xyz, scale_xyz, partition_raster_save_path, point_cloud_save_path, png_raster_path, espg_string):
     min_xyz, max_xyz = bounds_xyz
     scale_x, scale_y, scale_z = scale_xyz
 
@@ -374,14 +369,15 @@ def handle_label_point_cloud(input_file_path, bounds_xyz, scale_xyz, partition_r
     min_y = min_xyz[1] * scale_y
     max_y = max_xyz[1] * scale_y
 
-    os.makedirs(point_cloud_save_path, exist_ok=True)
-
-    t = time.localtime()
-    current_time = time.strftime("%Y_%m_%d_%H%M%S", t)
+    # t = time.localtime()
+    # current_time = time.strftime("%Y_%m_%d_%H%M%S", t)
 
     # Output with date/time string appended
-    gtiff_output_path = os.path.join(partition_raster_save_path, f"output_{current_time}.tif")
-    las_output_path = os.path.join(point_cloud_save_path, f"output_{current_time}.las")
+    gtiff_output_name = f"{input_file_name}_geotiff.tif"
+    las_output_name = f"{input_file_name}_labeled.las"
+
+    gtiff_output_path = os.path.join(output_folder_path, gtiff_output_name)
+    las_output_path = os.path.join(output_folder_path, las_output_name)
 
     # spawn gdal_translate program to translate png to GeoTiff
     translate_command = f"gdal_translate -of GTiff -a_srs {espg_string} -a_ullr {min_x} {min_y} {max_x} {max_y} {png_raster_path} {gtiff_output_path}"
@@ -391,7 +387,7 @@ def handle_label_point_cloud(input_file_path, bounds_xyz, scale_xyz, partition_r
     edit_command = f"gdal_edit -a_srs {espg_string} {gtiff_output_path}"
     os.system(edit_command)
 
-    print(f"saved gtiff to {gtiff_output_path}")
+    print(f"    -- Saved GeoTIFF to {gtiff_output_path}")
 
     # Overlay the raster onto the point cloud using the pdal pipeline
     pipeline = pdal.Reader.las(filename=input_file_path) | pdal.Filter.colorization(raster=gtiff_output_path, dimensions="Red, Green, Blue")
@@ -403,48 +399,19 @@ def handle_label_point_cloud(input_file_path, bounds_xyz, scale_xyz, partition_r
     pipeline.execute()
 
 
-def print_runtime(f):
-    def wrapper(*args, **kwargs):
-        start = timeit.default_timer()
-        result = f(*args, **kwargs)
-        elapsed = timeit.default_timer() - start
-        print(f"    - Finished in {elapsed:.2f} seconds")
-        return result
-    return wrapper
+def handle_save_context_file(_context, input_file_name, output_folder_path, save_context_file=False):
+    if not save_context_file:
+        return
 
+    writeable_values = {}
+    for key, value in _context.items():
+        try:
+            json.dumps(value)
+            writeable_values[key] = value
+        except TypeError:
+            pass
 
-def run_algo(user_data):
-    algorithm = Pipeline() \
-        .then(handle_read_las_data) \
-        .then(handle_las2img) \
-        .then(handle_save_grid_raster) \
-        .then(handle_compute_patches) \
-        .then(handle_patches_to_dict) \
-        .then(handle_compute_patches_labeled_grid) \
-        .then(handle_compute_patch_neighbors) \
-        .then(handle_save_patches_raster) \
-        .then(handle_compute_hierarchies) \
-        .then(handle_save_centroids_raster) \
-        .then(handle_find_connected_hierarchies) \
-        .then(handle_calculate_edge_weight) \
-        .then(handle_partition_graph) \
-        .then(handle_trees_to_labeled_grid)
-
-    # handle_save_labeled_grid_as_image has an if checking for should_save as well,
-    # so having both ifs is redundant. Doing this to show that there is a lot of
-    # flexibility in how the Pipeline and its components are used.
-    if user_data["save_partition_raster"]:
-        algorithm.then(handle_save_partition_raster) \
-        .then(handle_label_points) \
-        .then(handle_save_tree_raster)
-
-    algorithm.then(handle_label_point_cloud)
-    algorithm.intersperse(print_runtime)
-
-    result = algorithm.execute(user_data)
-    print("== Result")
-    print(result.keys())
-    print("== Tree Count")
-    print(len(result["partitioned_graph"]))
-
-    return result
+    file_path = os.path.join(output_folder_path, f"{input_file_name}_pipeline.json")
+    with open(file_path, "w") as file:
+        json.dump(writeable_values, file, indent=4, skipkeys=True)
+    print(f"    -- Saved context file to {file_path}")
