@@ -3,7 +3,10 @@ Installation
 
 Pre-requisites
 --------------
-Install OSGeo4w shell or QGIS version 3.24 or greater you can find
+The following package requires both PDAL and GDAL.  The easiest way to 
+get both of these in a single environment is to use the OSGeo4w shell.
+
+Install OSGeo4w shell or QGIS Standalone version 3.24 or greater you can find
 the download here: https://qgis.org/en/site/forusers/download.html
 QGIS comes installed with the OSGeo4w
 
@@ -23,8 +26,10 @@ PDAL
 Installation
 ------------
 
-There is an included wheel file in the git repository.  From the directory that contains the
-wheel file use the command:
+There is an included wheel file in the git repository. This is the easiest way to
+install all of the required dependencies.  It is recommended to install the wheel
+from the command line in the OSGeo4w shell--this will handle PDAL/GDAL dependencies
+properly.  From the directory that contains the wheel file use the command:
 
 .. code-block:: console
 
