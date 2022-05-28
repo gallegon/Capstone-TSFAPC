@@ -70,10 +70,10 @@ class Pipeline:
 
             acquired_params = dict()
             for param in handler_params:
-                if param in default_params:
-                    acquired_params[param] = default_params[param]
-                elif param in context:
+                if param in context:
                     acquired_params[param] = context[param]
+                elif param in default_params:
+                    acquired_params[param] = default_params[param]
                 elif param == "_context":
                     acquired_params[param] = context
                 else:
@@ -195,8 +195,8 @@ def handle_las2img(points_xyz, bounds_xyz, range_xyz, scale_xyz, discretization,
     }
 
 
-def handle_gaussian_filter(grid, gaussian, gaussian_sigma):
-    if not gaussian or gaussian_sigma is None:
+def handle_gaussian_filter(grid, gaussian_sigma=None):
+    if gaussian_sigma is None:
         return
 
     grid = gaussian_filter(grid, sigma=gaussian_sigma)
@@ -206,7 +206,15 @@ def handle_gaussian_filter(grid, gaussian, gaussian_sigma):
     }
 
 
-def handle_compute_patches(grid, discretization, min_height, neighbor_mask):
+def handle_grid_height_cutoff(grid, min_height):
+    grid[grid < min_height] = 0
+
+    return {
+        "grid": grid
+    }
+
+
+def handle_compute_patches(grid, discretization, min_height, neighbor_mask=None):
     all_patches = compute_patches(grid, discretization, min_height, neighbor_mask)
 
     return {
@@ -283,7 +291,7 @@ def handle_trees_to_labeled_grid(trees, grid_size):
     }
 
 
-def handle_label_points(save_partition_raster, labeled_partitions, points_xyz, point_count, min_xyz, cell_size):
+def handle_label_points(labeled_partitions, points_xyz, point_count, min_xyz, cell_size, save_partition_raster=True):
     if not save_partition_raster:
         return
 
@@ -294,7 +302,7 @@ def handle_label_points(save_partition_raster, labeled_partitions, points_xyz, p
     }
 
 
-def handle_save_partition_raster(save_partition_raster, input_file_name, output_folder_path, labeled_partitions):
+def handle_save_partition_raster(input_file_name, output_folder_path, labeled_partitions, save_partition_raster=True):
     if not save_partition_raster:
         return
 
@@ -316,7 +324,7 @@ def handle_save_partition_raster(save_partition_raster, input_file_name, output_
     }
 
 
-def handle_save_patches_raster(save_patches_raster, input_file_name, output_folder_path, labeled_grid):
+def handle_save_patches_raster(input_file_name, output_folder_path, labeled_grid, save_patches_raster=False):
     if not save_patches_raster:
         return
 
@@ -334,7 +342,7 @@ def handle_save_patches_raster(save_patches_raster, input_file_name, output_fold
     print(f"    - Saved patches raster to \"{save_path}\"")
 
 
-def handle_save_grid_raster(save_grid_raster, input_file_name, output_folder_path, grid, discretization):
+def handle_save_grid_raster(input_file_name, output_folder_path, grid, discretization, save_grid_raster=False):
     if not save_grid_raster:
         return
 
@@ -349,6 +357,9 @@ def handle_save_grid_raster(save_grid_raster, input_file_name, output_folder_pat
 
 
 def handle_label_point_cloud(input_file_path, input_file_name, output_folder_path, png_raster_path, bounds_xyz, scale_xyz, espg_string):
+    if not png_raster_path:
+        return
+
     min_xyz, max_xyz = bounds_xyz
     scale_x, scale_y, scale_z = scale_xyz
 
@@ -388,7 +399,10 @@ def handle_label_point_cloud(input_file_path, input_file_name, output_folder_pat
     pipeline.execute()
 
 
-def handle_save_context_file(_context, output_folder_path):
+def handle_save_context_file(_context, input_file_name, output_folder_path, save_context_file=False):
+    if not save_context_file:
+        return
+
     writeable_values = {}
     for key, value in _context.items():
         try:
@@ -397,7 +411,7 @@ def handle_save_context_file(_context, output_folder_path):
         except TypeError:
             pass
 
-    file_path = os.path.join(output_folder_path, "context.json")
+    file_path = os.path.join(output_folder_path, f"{input_file_name}_pipeline.json")
     with open(file_path, "w") as file:
         json.dump(writeable_values, file, indent=4, skipkeys=True)
     print(f"    -- Saved context file to {file_path}")

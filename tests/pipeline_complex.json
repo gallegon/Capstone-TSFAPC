@@ -1,0 +1,24 @@
+{
+    "input_file_path": "sample_data/hard_nno.las",
+
+    "resolution": 0.6,
+    "discretization": 256,
+    "min_height": 128,
+    "gaussian_sigma": 0.4,
+
+    "weight_level_depth": 0.84,
+    "weight_node_depth": 1.07,
+    "weight_shared_ratio": -0.11,
+    "weight_top_distance": 0.77,
+    "weight_centroid_distance": 0.0,
+    "weight_threshold": 0.7,
+
+    "espg_string": "EPSG:2027",
+
+    "output_folder_name": "testing_output",
+    "save_folder_name": "complex_test",
+    "save_grid_raster": true,
+    "save_patches_raster": true,
+    "save_partition_raster": true,
+    "save_context_file": true
+}

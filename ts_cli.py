@@ -1,51 +1,16 @@
+import json
+import sys
+
 from treesegmentation.treeseg_lib import *
 
 
-def main():
-    weight_level_depth = 0.84
-    weight_node_depth = 1.07
-    weight_shared_ratio = -0.11
-    weight_top_distance = 0.77
-    weight_centroid_distance = 0.0
-
-    user_data = {
-        "input_file_path": "sample_data/hard_nno.las",
-        "output_folder_name": None,
-        "save_folder_name": None,
-
-        "weight_level_depth": weight_level_depth,
-        "weight_node_depth": weight_node_depth,
-        "weight_shared_ratio": weight_shared_ratio,
-        "weight_top_distance": weight_top_distance,
-        "weight_centroid_distance": weight_centroid_distance,
-        "weight_threshold": 0.7,
-
-        "resolution": 0.6,
-        "discretization": 64,
-        "min_height": 10,
-        "neighbor_mask": NEIGHBOR_MASK_FOUR_WAY,
-        "gaussian": False,
-        "gaussian_sigma": 0.1,
-        "espg_string": "EPSG:2027",
-
-        "save_grid_raster": True,
-        "grid_raster_save_path": "grid_rasters",
-        "save_patches_raster": True,
-        "patches_raster_save_path": "patches_rasters",
-        "save_centroids_raster": False,
-        "centroids_raster_save_path": "centroids_raster",
-        "save_partition_raster": True,
-        "partition_raster_save_path": "partition_rasters",
-        "save_tree_raster": False,
-        "tree_raster_save_path": "tree_rasters",
-        "point_cloud_save_path": "labeled_point_clouds",
-    }
-
+def run_treesegmentation(initial_context):
     algorithm = Pipeline(verbose=True) \
         .then(handle_create_file_names_and_paths) \
         .then(handle_read_las_data) \
         .then(handle_las2img) \
         .then(handle_gaussian_filter) \
+        .then(handle_grid_height_cutoff) \
         .then(handle_save_grid_raster) \
         .then(handle_compute_patches) \
         .then(handle_patches_to_dict) \
@@ -65,8 +30,24 @@ def main():
     if algorithm.verbose:
         algorithm.intersperse(transform_print_runtime)
 
-    result = algorithm.execute(user_data)
-    return result
+    return algorithm.execute(initial_context)
+
+
+def load_context_data(file_path):
+    with open(file_path) as file:
+        data = json.load(file)
+    if not isinstance(data, dict):
+        raise TypeError("Context file must be a JSON dictionary.")
+    return data
+
+
+def main():
+    args = sys.argv[1:]
+    if len(args) == 1:
+        settings = load_context_data(args[0])
+        run_treesegmentation(settings)
+    else:
+        print("ts_cli expects a path to a context file path as its only argument.")
 
 
 if __name__ == "__main__":
