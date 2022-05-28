@@ -37,11 +37,20 @@
 <h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
 <section id="command-line-interface-cli">
 <h2>Command Line Interface (CLI)<a class="headerlink" href="#command-line-interface-cli" title="Permalink to this headline">¶</a></h2>
-<p>Can run from the command line.</p>
+<p>Can run from the command line via</p>
+<p><code class="docutils literal notranslate"><span class="pre">ts_cli.py</span> <span class="pre">context_file</span></code></p>
+<p>where <code class="docutils literal notranslate"><span class="pre">context_file</span></code> is a path
+to a JSON file containing a dictionary of string keys to values to be used as the configuration for the algorithm.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">tests/</span></code> folder contains examples of context files.</p>
+</section>
+<section id="python-module">
+<h2>Python Module<a class="headerlink" href="#python-module" title="Permalink to this headline">¶</a></h2>
+<p>Simply <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">treesegmentation.treeseg_lib</span></code> for access to the <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> object as well as the defined handler functions.</p>
 </section>
 <section id="qgis-gui">
 <h2>QGIS (GUI)<a class="headerlink" href="#qgis-gui" title="Permalink to this headline">¶</a></h2>
-<p>Can install and run as QGIS plugin.</p>
+<p>You can install and run as a QGIS plugin from the <cite>dev</cite> branch on GitHub.
+Support for this is limited at the moment, and the CLI or Python method is recommended.</p>
 </section>
 </section>
 
@@ -66,6 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#command-line-interface-cli">Command Line Interface (CLI)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#python-module">Python Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#qgis-gui">QGIS (GUI)</a></li>
 </ul>
 </li>
